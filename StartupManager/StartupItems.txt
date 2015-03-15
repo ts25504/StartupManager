@@ -1,0 +1,36 @@
+7
+ctfmon
+C:\Windows\system32\ctfmon.exe
+HKEY_CURRENT_USER
+Software\Microsoft\Windows\CurrentVersion\Run
+1
+ImeGuardCom
+C:\Program Files (x86)\SogouInput\Components\SGImeGuard\1.0.0.27\SGImeGuard.exe
+HKEY_CURRENT_USER
+Software\Microsoft\Windows\CurrentVersion\Run
+1
+BCSSync
+C:\Program Files (x86)\Microsoft Office\Office14\BCSSync.exe
+HKEY_LOCAL_MACHINE
+Software\Microsoft\Windows\CurrentVersion\Run
+1
+IME14 CHS Setup
+C:\PROGRA~2\COMMON~1\MICROS~1\IME14\SHARED\IMEKLMG.EXE
+HKEY_LOCAL_MACHINE
+Software\Microsoft\Windows\CurrentVersion\Run
+1
+BCSSync
+C:\Program Files (x86)\Microsoft Office\Office14\BCSSync.exe
+HKEY_LOCAL_MACHINE
+Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Run
+1
+IME14 CHS Setup
+C:\PROGRA~2\COMMON~1\MICROS~1\IME14\SHARED\IMEKLMG.EXE
+HKEY_LOCAL_MACHINE
+Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Run
+1
+DAEMON Tools Lite
+C:\Program Files (x86)\DAEMON Tools Lite\DTLite.exe
+HKEY_CURRENT_USER
+Software\Microsoft\Windows\CurrentVersion\Run
+1
