@@ -30,8 +30,6 @@ protected:
 	DECLARE_MESSAGE_MAP()
 public:
     CListCtrl m_startup_list;
-    afx_msg void OnBnClickedCancelButton();
     afx_msg void OnBnClickedApplyButton();
-    afx_msg void OnBnClickedOkButton();
     void OnCancel();
 };

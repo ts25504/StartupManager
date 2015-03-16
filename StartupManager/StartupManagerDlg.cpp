@@ -67,15 +67,15 @@ BEGIN_MESSAGE_MAP(CStartupManagerDlg, CDialog)
     ON_WM_PAINT()
     ON_WM_QUERYDRAGICON()
     //}}AFX_MSG_MAP
-    ON_BN_CLICKED(IDC_CANCEL_BUTTON, &CStartupManagerDlg::OnBnClickedCancelButton)
     ON_BN_CLICKED(IDC_APPLY_BUTTON, &CStartupManagerDlg::OnBnClickedApplyButton)
-    ON_BN_CLICKED(IDC_OK_BUTTON, &CStartupManagerDlg::OnBnClickedOkButton)
 END_MESSAGE_MAP()
 
 void ReadItems(std::vector<ValueInfo>& vi_vec)
 {
     FILE* fp = NULL;
-    fopen_s(&fp, "StartupItems.txt", "r+");
+    errno_t err = fopen_s(&fp, "StartupItems.txt", "r+");
+    if (err != 0)
+        return;
     if (feof(fp))
         return;
     TCHAR sz_key[MAX_PATH] = {0};
@@ -112,7 +112,9 @@ void ReadItems(std::vector<ValueInfo>& vi_vec)
 void WriteItems(std::vector<ValueInfo>& vi_vec)
 {
     FILE* fp = NULL;
-    fopen_s(&fp, "StartupItems.txt", "w+");
+    errno_t err = fopen_s(&fp, "StartupItems.txt", "w+");
+    if (err != 0)
+        return;
     TCHAR sz_key[MAX_PATH] = {0};
     size_t n = vi_vec.size();
     _ftprintf(fp, TEXT("%d\n"), n);
@@ -276,13 +278,6 @@ HCURSOR CStartupManagerDlg::OnQueryDragIcon()
     return static_cast<HCURSOR>(m_hIcon);
 }
 
-
-void CStartupManagerDlg::OnBnClickedCancelButton()
-{
-    // TODO: 在此添加控件通知处理程序代码
-    OnCancel();
-}
-
 void CStartupManagerDlg::OnBnClickedApplyButton()
 {
     // TODO: 在此添加控件通知处理程序代码
@@ -302,12 +297,6 @@ void CStartupManagerDlg::OnBnClickedApplyButton()
             m_startup_list.SetItemText(i, 4, TEXT(""));
         }
     }
-}
-
-void CStartupManagerDlg::OnBnClickedOkButton()
-{
-    // TODO: 在此添加控件通知处理程序代码
-    CDialog::OnOK();
 }
 
 void CStartupManagerDlg::OnCancel()

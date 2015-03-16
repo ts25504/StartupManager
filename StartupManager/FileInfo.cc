@@ -4,6 +4,8 @@
 #include <Shlwapi.h>
 #include "FileInfo.h"
 
+#define MAX_VALUE 32767
+
 FileInfo::FileInfo() : m_p_version_data(NULL)
 {
 }
@@ -26,12 +28,28 @@ bool FileInfo::Open(TCHAR* p_file_path)
 {
     if (p_file_path == NULL)
         goto exit;
-    if (!PathFileExists(p_file_path))
-        PathRemoveArgs(p_file_path);
-    if (!PathFileExists(p_file_path))
-        PathUnquoteSpaces(p_file_path);
+    TCHAR* p_parsed_path = new TCHAR[MAX_VALUE];
+    if (p_parsed_path == NULL)
+        goto exit;
+    memcpy(p_parsed_path, p_file_path, _tcslen(p_file_path)*sizeof(TCHAR));
+    if (!PathFileExists(p_parsed_path))
+    {
+    if (p_parsed_path[0] == TEXT('\"'))
+        p_parsed_path = p_parsed_path + 1;
+    for (ULONG i = 0; i < _tcslen(p_parsed_path); ++i)
+    {
+        if (p_parsed_path[i-3] == TEXT('.') &&
+            (p_parsed_path[i-2] == TEXT('e') || p_parsed_path[i-2] == TEXT('E')) &&
+            (p_parsed_path[i-1] == TEXT('x') || p_parsed_path[i-1] == TEXT('X')) &&
+            (p_parsed_path[i] == TEXT('e') || p_parsed_path[i] == TEXT('E')))
+        {
+            _tcsncpy_s(p_parsed_path, _tcslen(p_parsed_path)*sizeof(TCHAR), p_parsed_path, i+1);
+            break;
+        }
+    }
+    }
     bool b_ret = false;
-    DWORD dw_size = ::GetFileVersionInfoSize(p_file_path, NULL);
+    DWORD dw_size = ::GetFileVersionInfoSize(p_parsed_path, NULL);
     if (dw_size == 0)
         goto exit;
 
@@ -40,12 +58,17 @@ bool FileInfo::Open(TCHAR* p_file_path)
         goto exit;
     memset(m_p_version_data, 0, dw_size);
 
-    long l_ret = ::GetFileVersionInfo((TCHAR*)p_file_path, 0, dw_size, (void**)m_p_version_data);
+    long l_ret = ::GetFileVersionInfo((TCHAR*)p_parsed_path, 0, dw_size, (void**)m_p_version_data);
     if (l_ret == 0)
         goto exit;
 
     b_ret = true;
 exit:
+    if (p_parsed_path)
+    {
+        delete[] p_parsed_path;
+        p_parsed_path = NULL;
+    }
     if (!b_ret)
         Close();
     return b_ret;
@@ -86,5 +109,8 @@ TCHAR* FileInfo::QueryValue(const TCHAR* p_value_name)
     l_ret = ::VerQueryValue(m_p_version_data, sz_sub_block, &p_data, &u_len);
     if (l_ret == 0)
         return TEXT("");
-    return (TCHAR*)p_data;
+    if (p_data)
+        return (TCHAR*)p_data;
+    else
+        return TEXT("Î´Öª³ÌÐò");
 }

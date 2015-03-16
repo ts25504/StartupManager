@@ -256,12 +256,15 @@ bool MyRegistry::Query(std::vector<ValueInfo>& vi_vec)
                 for (ULONG i = 0; i < vi_vec.size(); ++i)
                 {
                     if (_tcscmp(vi_vec[i].sz_value_name, vi.sz_value_name) == 0 &&
+                        _tcscmp(vi_vec[i].sz_value, vi_vec[i].sz_value) == 0 &&
                         _tcscmp(vi_vec[i].sz_subkey, vi.sz_subkey) == 0)
                     b_push = false;
                 }
 
                 if (b_push)
+                {
                     vi_vec.push_back(vi);
+                }
                 //_tprintf(TEXT("(%d) %s %s\n"), i+1, ach_value, ach_data);
             }
         }

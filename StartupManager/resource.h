@@ -7,12 +7,7 @@
 #define IDS_ABOUTBOX                    101
 #define IDD_STARTUPMANAGER_DIALOG       102
 #define IDR_MAINFRAME                   128
-#define IDC_LIST1                       1000
 #define IDC_STARTUP_LIST                1000
-#define IDC_START_BUTTON                1001
-#define IDC_OK_BUTTON                   1001
-#define IDC_FORBID_BUTTON               1002
-#define IDC_CANCEL_BUTTON               1004
 #define IDC_APPLY_BUTTON                1006
 
 // Next default values for new objects
