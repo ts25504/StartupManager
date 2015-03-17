@@ -184,7 +184,6 @@ BOOL CStartupManagerDlg::OnInitDialog()
     m_startup_list.InsertColumn(4, TEXT("״̬"), LVCFMT_LEFT, rect.Width()/7, 4);
 
     FileInfo fi;
-    //std::vector<ValueInfo> vi_vec;
     MyRegistry my_reg(HKEY_CURRENT_USER);
     my_reg.Open(TEXT("Software\\Microsoft\\Windows\\CurrentVersion\\Run"), KEY_ALL_ACCESS);
     my_reg.Query(vi_vec);

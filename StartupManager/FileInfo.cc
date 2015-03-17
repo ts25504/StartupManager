@@ -26,27 +26,28 @@ void FileInfo::Close()
 
 bool FileInfo::Open(TCHAR* p_file_path)
 {
+    TCHAR* p_parsed_path = new TCHAR[MAX_VALUE];
     if (p_file_path == NULL)
         goto exit;
-    TCHAR* p_parsed_path = new TCHAR[MAX_VALUE];
     if (p_parsed_path == NULL)
         goto exit;
+    memset(p_parsed_path, 0, MAX_VALUE*sizeof(TCHAR));
     memcpy(p_parsed_path, p_file_path, _tcslen(p_file_path)*sizeof(TCHAR));
     if (!PathFileExists(p_parsed_path))
     {
-    if (p_parsed_path[0] == TEXT('\"'))
-        p_parsed_path = p_parsed_path + 1;
-    for (ULONG i = 0; i < _tcslen(p_parsed_path); ++i)
-    {
-        if (p_parsed_path[i-3] == TEXT('.') &&
-            (p_parsed_path[i-2] == TEXT('e') || p_parsed_path[i-2] == TEXT('E')) &&
-            (p_parsed_path[i-1] == TEXT('x') || p_parsed_path[i-1] == TEXT('X')) &&
-            (p_parsed_path[i] == TEXT('e') || p_parsed_path[i] == TEXT('E')))
+        if (p_parsed_path[0] == TEXT('\"'))
+            ++p_parsed_path;
+        for (ULONG i = 0; i < _tcslen(p_parsed_path); ++i)
         {
-            _tcsncpy_s(p_parsed_path, _tcslen(p_parsed_path)*sizeof(TCHAR), p_parsed_path, i+1);
-            break;
+            if (p_parsed_path[i-3] == TEXT('.') &&
+                (p_parsed_path[i-2] == TEXT('e') || p_parsed_path[i-2] == TEXT('E')) &&
+                (p_parsed_path[i-1] == TEXT('x') || p_parsed_path[i-1] == TEXT('X')) &&
+                (p_parsed_path[i] == TEXT('e') || p_parsed_path[i] == TEXT('E')))
+            {
+                _tcsncpy_s(p_parsed_path, _tcslen(p_parsed_path)*sizeof(TCHAR), p_parsed_path, i+1);
+                break;
+            }
         }
-    }
     }
     bool b_ret = false;
     DWORD dw_size = ::GetFileVersionInfoSize(p_parsed_path, NULL);
@@ -81,15 +82,16 @@ TCHAR* FileInfo::QueryValue(const TCHAR* p_value_name)
         WORD w_codePage;
     } *p_translate;
 
+    bool b_err = true;
     if (m_p_version_data == NULL)
-        return TEXT("");
+        goto exit;
     HRESULT hr = 0;
     UINT cb_translate = 0;
     TCHAR sz_sub_block[MAX_PATH] = {0};
     long l_ret = ::VerQueryValue(m_p_version_data, TEXT("\\VarFileInfo\\Translation"),
         (void**)&p_translate, &cb_translate);
     if (l_ret == 0)
-        return TEXT("");
+        goto exit;
 
     for (ULONG i = 0; i < (cb_translate/sizeof(struct LANGANDCODEPAGE)); ++i)
     {
@@ -100,7 +102,7 @@ TCHAR* FileInfo::QueryValue(const TCHAR* p_value_name)
             p_value_name);
         if (FAILED(hr))
         {
-            return TEXT("");
+            goto exit;
         }
     }
 
@@ -108,6 +110,10 @@ TCHAR* FileInfo::QueryValue(const TCHAR* p_value_name)
     UINT u_len = 0;
     l_ret = ::VerQueryValue(m_p_version_data, sz_sub_block, &p_data, &u_len);
     if (l_ret == 0)
+        goto exit;
+    b_err = false;
+exit:
+    if (b_err)
         return TEXT("");
     if (p_data)
         return (TCHAR*)p_data;
