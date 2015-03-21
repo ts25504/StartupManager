@@ -1,10 +1,7 @@
 #include "stdafx.h"
-#include <tchar.h>
 #include <strsafe.h>
 #include <Shlwapi.h>
 #include "FileInfo.h"
-
-#define MAX_VALUE 32767
 
 FileInfo::FileInfo() : m_p_version_data(NULL)
 {
@@ -115,12 +112,9 @@ TCHAR* FileInfo::QueryValue(const TCHAR* p_value_name)
         goto exit;
     b_err = false;
 exit:
-    if (b_err)
-        return TEXT("");
-    if (p_data)
-        return (TCHAR*)p_data;
-    else
+    if (b_err || p_data == NULL)
         return TEXT("Î´Öª³ÌÐò");
+    return (TCHAR*)p_data;
 }
 
 TCHAR* FileInfo::GetFileDescription()

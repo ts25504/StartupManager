@@ -1,20 +1,18 @@
 #include "stdafx.h"
-#include <tchar.h>
-#include <stdio.h>
 #include "MyRegistry.h"
 
 MyRegistry::MyRegistry(HKEY h_key)
 {
     m_h_key = h_key;
     m_h_origin_key = h_key;
-    memset(m_sz_subkey, 0, MAX_PATH);
+    memset(m_sz_subkey, 0, MAX_KEY_LENGTH);
 }
 MyRegistry::~MyRegistry()
 {
     Close();
 }
 
-bool MyRegistry::CreateKey(const TCHAR* lp_subkey)
+bool MyRegistry::CreateKey(const TCHAR* lp_subkey, REGSAM sam_desired)
 {
     HKEY h_key = NULL;
     DWORD dw_disposition = 0;
@@ -25,7 +23,7 @@ bool MyRegistry::CreateKey(const TCHAR* lp_subkey)
         0,
         NULL,
         REG_OPTION_VOLATILE,
-        0,
+        sam_desired | KEY_WOW64_64KEY,
         NULL,
         &h_key,
         &dw_disposition);
@@ -44,13 +42,18 @@ bool MyRegistry::Open(const TCHAR* lp_subkey, REGSAM sam_desired)
 {
     HKEY h_key = NULL;
     bool b_ret = false;
-    long l_ret = ::RegOpenKeyEx(m_h_key, lp_subkey, 0, sam_desired, &h_key);
+    long l_ret = ::RegOpenKeyEx(
+        m_h_key,
+        lp_subkey,
+        0,
+        sam_desired | KEY_WOW64_64KEY,
+        &h_key);
     if (l_ret != ERROR_SUCCESS)
     {
         goto exit;
     }
     m_h_key = h_key;
-    _tcscpy_s(m_sz_subkey, MAX_PATH, lp_subkey);
+    _tcscpy_s(m_sz_subkey, MAX_KEY_LENGTH, lp_subkey);
     b_ret = true;
 exit:
     return b_ret;
@@ -71,7 +74,7 @@ exit:
 
 bool MyRegistry::DeleteKey(const TCHAR* lp_subkey)
 {
-    long l_ret = ::RegDeleteKey(m_h_key, lp_subkey);
+    long l_ret = ::RegDeleteKeyEx(m_h_key, lp_subkey, KEY_WOW64_64KEY, 0);
     bool b_ret = false;
     if (l_ret != ERROR_SUCCESS)
     {
@@ -172,7 +175,6 @@ bool MyRegistry::Query(std::vector<ValueInfo>& vi_vec)
     DWORD i = 0;
     long l_ret = 0;
     bool b_ret = false;
-    ValueInfo vi = {0};
 
     TCHAR sz_ach_value[MAX_VALUE_NAME]  = {0};
     DWORD dw_cch_value = MAX_VALUE_NAME;
@@ -204,13 +206,14 @@ bool MyRegistry::Query(std::vector<ValueInfo>& vi_vec)
     {
         for (i = 0, l_ret = ERROR_SUCCESS; i < dw_c_values; i++)
         {
+            ValueInfo vi = {0};
             dw_cch_value = MAX_VALUE_NAME;
             dw_cch_data = MAX_VALUE;
             vi.sz_value_name[0] = '\0';
             vi.sz_value[0] = '\0';
             vi.h_key = m_h_origin_key;
             vi.state = 1;
-            _tcscpy_s(vi.sz_subkey, MAX_PATH, m_sz_subkey);
+            _tcscpy_s(vi.sz_subkey, MAX_KEY_LENGTH, m_sz_subkey);
             l_ret = ::RegEnumValue(
                 m_h_key,
                 i,

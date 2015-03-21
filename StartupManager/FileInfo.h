@@ -1,7 +1,7 @@
 #ifndef _FILEINFO_H_
 #define _FILEINFO_H_
 
-#include <Windows.h>
+#define MAX_VALUE 32767
 
 class FileInfo
 {

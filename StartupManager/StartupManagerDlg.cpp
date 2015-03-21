@@ -2,7 +2,6 @@
 //
 
 #include "stdafx.h"
-#include <tchar.h>
 #include "StartupManager.h"
 #include "StartupManagerDlg.h"
 #include "MyRegistry.h"
@@ -89,9 +88,9 @@ void ReadDisabledItemsFromFile(std::vector<ValueInfo>& vi_vec)
         vi.sz_value_name[_tcslen(vi.sz_value_name)-1] = TEXT('\0');
         _fgetts(vi.sz_value, MAX_VALUE, fp);
         vi.sz_value[_tcslen(vi.sz_value)-1] = TEXT('\0');
-        _fgetts(sz_key, MAX_PATH, fp);
+        _fgetts(sz_key, MAX_KEY_LENGTH, fp);
         sz_key[_tcslen(sz_key)-1] = TEXT('\0');
-        _fgetts(vi.sz_subkey, MAX_PATH, fp);
+        _fgetts(vi.sz_subkey, MAX_KEY_LENGTH, fp);
         vi.sz_subkey[_tcslen(vi.sz_subkey)-1] = TEXT('\0');
         _ftscanf_s(fp, TEXT("%d\n"), &vi.state);
         if(_tcscmp(sz_key, TEXT("HKEY_CLASSES_ROOT")) == 0)
@@ -124,7 +123,7 @@ void WriteDisabledItemsToFile(std::vector<ValueInfo>& vi_vec)
     errno_t err = fopen_s(&fp, "DisabledItems.txt", "w+");
     if (err != 0)
         return;
-    TCHAR sz_key[MAX_PATH] = {0};
+    TCHAR sz_key[MAX_KEY_LENGTH] = {0};
     size_t num_of_disabled_items = 0;
     for (ULONG i = 0; i < vi_vec.size(); ++i)
     {
@@ -137,15 +136,15 @@ void WriteDisabledItemsToFile(std::vector<ValueInfo>& vi_vec)
         if (vi_vec[i].state == 0)
         {
             if(vi_vec[i].h_key == HKEY_CLASSES_ROOT)
-                _tcscpy_s(sz_key, MAX_PATH, TEXT("HKEY_CLASSES_ROOT"));
+                _tcscpy_s(sz_key, MAX_KEY_LENGTH, TEXT("HKEY_CLASSES_ROOT"));
             else if (vi_vec[i].h_key == HKEY_CURRENT_USER)
-                _tcscpy_s(sz_key, MAX_PATH, TEXT("HKEY_CURRENT_USER"));
+                _tcscpy_s(sz_key, MAX_KEY_LENGTH, TEXT("HKEY_CURRENT_USER"));
             else if (vi_vec[i].h_key == HKEY_LOCAL_MACHINE)
-                _tcscpy_s(sz_key, MAX_PATH, TEXT("HKEY_LOCAL_MACHINE"));
+                _tcscpy_s(sz_key, MAX_KEY_LENGTH, TEXT("HKEY_LOCAL_MACHINE"));
             else if (vi_vec[i].h_key == HKEY_USERS)
-                _tcscpy_s(sz_key, MAX_PATH, TEXT("HKEY_USERS"));
+                _tcscpy_s(sz_key, MAX_KEY_LENGTH, TEXT("HKEY_USERS"));
             else if (vi_vec[i].h_key == HKEY_CURRENT_CONFIG)
-                _tcscpy_s(sz_key, MAX_PATH, TEXT("HKEY_CURRENT_CONFIG"));
+                _tcscpy_s(sz_key, MAX_KEY_LENGTH, TEXT("HKEY_CURRENT_CONFIG"));
 
             _ftprintf(fp, TEXT("%s\n%s\n%s\n%s\n"), vi_vec[i].sz_value_name, vi_vec[i].sz_value,
                 sz_key, vi_vec[i].sz_subkey);
@@ -207,8 +206,8 @@ BOOL CStartupManagerDlg::OnInitDialog()
 
     // 设置此对话框的图标。当应用程序主窗口不是对话框时，框架将自动
     //  执行此操作
-    SetIcon(m_hIcon, TRUE);			// 设置大图标
-    SetIcon(m_hIcon, FALSE);		// 设置小图标
+    SetIcon(m_hIcon, TRUE); // 设置大图标
+    SetIcon(m_hIcon, FALSE); // 设置小图标
 
     // TODO: 在此添加额外的初始化代码
     CRect rect;
