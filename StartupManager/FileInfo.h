@@ -9,6 +9,7 @@ public:
     FileInfo();
     ~FileInfo();
     bool Open(TCHAR* p_file_path);
+    TCHAR* GetFileDescription();
     TCHAR* QueryValue(const TCHAR* p_value_name);
     void Close();
 private:

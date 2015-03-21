@@ -70,21 +70,22 @@ BEGIN_MESSAGE_MAP(CStartupManagerDlg, CDialog)
     ON_BN_CLICKED(IDC_APPLY_BUTTON, &CStartupManagerDlg::OnBnClickedApplyButton)
 END_MESSAGE_MAP()
 
-void ReadItems(std::vector<ValueInfo>& vi_vec)
+void ReadDisabledItemsFromFile(std::vector<ValueInfo>& vi_vec)
 {
     FILE* fp = NULL;
-    errno_t err = fopen_s(&fp, "StartupItems.txt", "r+");
+    errno_t err = fopen_s(&fp, "DisabledItems.txt", "r+");
     if (err != 0)
         return;
     if (feof(fp))
         return;
     TCHAR sz_key[MAX_PATH] = {0};
-    size_t n = 0;
-    _ftscanf_s(fp, TEXT("%d\n"), &n);
-    for (ULONG i = 0; i < n; ++i)
+    size_t num_of_disabled_items = 0;
+    _ftscanf_s(fp, TEXT("%d\n"), &num_of_disabled_items);
+    for (ULONG i = 0; i < num_of_disabled_items; ++i)
     {
+        BOOL b_push = true;
         ValueInfo vi = {0};
-        _fgetts(vi.sz_value_name, MAX_VALUE_NAME, fp);
+        _fgetts(vi.sz_value_name, MAX_VALUE_NAME, fp); // fgetts() read \0.
         vi.sz_value_name[_tcslen(vi.sz_value_name)-1] = TEXT('\0');
         _fgetts(vi.sz_value, MAX_VALUE, fp);
         vi.sz_value[_tcslen(vi.sz_value)-1] = TEXT('\0');
@@ -94,48 +95,90 @@ void ReadItems(std::vector<ValueInfo>& vi_vec)
         vi.sz_subkey[_tcslen(vi.sz_subkey)-1] = TEXT('\0');
         _ftscanf_s(fp, TEXT("%d\n"), &vi.state);
         if(_tcscmp(sz_key, TEXT("HKEY_CLASSES_ROOT")) == 0)
-            vi.hkey = HKEY_CLASSES_ROOT;
+            vi.h_key = HKEY_CLASSES_ROOT;
         else if (_tcscmp(sz_key, TEXT("HKEY_CURRENT_USER")) == 0)
-            vi.hkey = HKEY_CURRENT_USER;
+            vi.h_key = HKEY_CURRENT_USER;
         else if (_tcscmp(sz_key, TEXT("HKEY_LOCAL_MACHINE")) == 0)
-            vi.hkey = HKEY_LOCAL_MACHINE;
+            vi.h_key = HKEY_LOCAL_MACHINE;
         else if (_tcscmp(sz_key, TEXT("HKEY_USERS\n")) == 0)
-            vi.hkey = HKEY_USERS;
+            vi.h_key = HKEY_USERS;
         else if (_tcscmp(sz_key, TEXT("HKEY_CURRENT_CONFIG")) == 0)
-            vi.hkey = HKEY_CURRENT_CONFIG;
-        vi_vec.push_back(vi);
+            vi.h_key = HKEY_CURRENT_CONFIG;
+        for (ULONG i = 0; i < vi_vec.size(); ++i)
+        {
+            if (_tcscmp(vi_vec[i].sz_value_name, vi.sz_value_name) == 0 &&
+                _tcscmp(vi_vec[i].sz_value, vi_vec[i].sz_value) == 0 &&
+                _tcscmp(vi_vec[i].sz_subkey, vi.sz_subkey) == 0)
+            b_push = false;
+        }
+        if (b_push)
+            vi_vec.push_back(vi);
     }
 
     fclose(fp);
 }
 
-void WriteItems(std::vector<ValueInfo>& vi_vec)
+void WriteDisabledItemsToFile(std::vector<ValueInfo>& vi_vec)
 {
     FILE* fp = NULL;
-    errno_t err = fopen_s(&fp, "StartupItems.txt", "w+");
+    errno_t err = fopen_s(&fp, "DisabledItems.txt", "w+");
     if (err != 0)
         return;
     TCHAR sz_key[MAX_PATH] = {0};
-    size_t n = vi_vec.size();
-    _ftprintf(fp, TEXT("%d\n"), n);
-    for (ULONG i = 0; i < n; ++i)
+    size_t num_of_disabled_items = 0;
+    for (ULONG i = 0; i < vi_vec.size(); ++i)
     {
-        if(vi_vec[i].hkey == HKEY_CLASSES_ROOT)
-            _tcscpy_s(sz_key, MAX_PATH, TEXT("HKEY_CLASSES_ROOT"));
-        else if (vi_vec[i].hkey == HKEY_CURRENT_USER)
-            _tcscpy_s(sz_key, MAX_PATH, TEXT("HKEY_CURRENT_USER"));
-        else if (vi_vec[i].hkey == HKEY_LOCAL_MACHINE)
-            _tcscpy_s(sz_key, MAX_PATH, TEXT("HKEY_LOCAL_MACHINE"));
-        else if (vi_vec[i].hkey == HKEY_USERS)
-            _tcscpy_s(sz_key, MAX_PATH, TEXT("HKEY_USERS"));
-        else if (vi_vec[i].hkey == HKEY_CURRENT_CONFIG)
-            _tcscpy_s(sz_key, MAX_PATH, TEXT("HKEY_CURRENT_CONFIG"));
+        if (vi_vec[i].state == 0)
+            ++num_of_disabled_items;
+    }
+    _ftprintf(fp, TEXT("%d\n"), num_of_disabled_items);
+    for (ULONG i = 0; i < vi_vec.size(); ++i)
+    {
+        if (vi_vec[i].state == 0)
+        {
+            if(vi_vec[i].h_key == HKEY_CLASSES_ROOT)
+                _tcscpy_s(sz_key, MAX_PATH, TEXT("HKEY_CLASSES_ROOT"));
+            else if (vi_vec[i].h_key == HKEY_CURRENT_USER)
+                _tcscpy_s(sz_key, MAX_PATH, TEXT("HKEY_CURRENT_USER"));
+            else if (vi_vec[i].h_key == HKEY_LOCAL_MACHINE)
+                _tcscpy_s(sz_key, MAX_PATH, TEXT("HKEY_LOCAL_MACHINE"));
+            else if (vi_vec[i].h_key == HKEY_USERS)
+                _tcscpy_s(sz_key, MAX_PATH, TEXT("HKEY_USERS"));
+            else if (vi_vec[i].h_key == HKEY_CURRENT_CONFIG)
+                _tcscpy_s(sz_key, MAX_PATH, TEXT("HKEY_CURRENT_CONFIG"));
 
-        _ftprintf(fp, TEXT("%s\n%s\n%s\n%s\n"), vi_vec[i].sz_value_name, vi_vec[i].sz_value,
-            sz_key, vi_vec[i].sz_subkey);
-        _ftprintf(fp, TEXT("%d\n"), vi_vec[i].state);
+            _ftprintf(fp, TEXT("%s\n%s\n%s\n%s\n"), vi_vec[i].sz_value_name, vi_vec[i].sz_value,
+                sz_key, vi_vec[i].sz_subkey);
+            _ftprintf(fp, TEXT("%d\n"), vi_vec[i].state);
+        }
     }
     fclose(fp);
+}
+
+void AddItems(HKEY h_key, const TCHAR* sz_subkey, std::vector<ValueInfo>& vi_vec)
+{
+    MyRegistry my_reg(h_key);
+    my_reg.Open(sz_subkey, KEY_READ);
+    my_reg.Query(vi_vec);
+    my_reg.Close();
+}
+
+void DeleteItem(ValueInfo& vi)
+{
+    vi.state = 0;
+    MyRegistry my_reg(vi.h_key);
+    my_reg.Open(vi.sz_subkey, KEY_SET_VALUE);
+    my_reg.DeleteValue(vi.sz_value_name);
+    my_reg.Close();
+}
+
+void SetValueToReg(ValueInfo& vi)
+{
+    vi.state = 1;
+    MyRegistry my_reg(vi.h_key);
+    my_reg.Open(vi.sz_subkey, KEY_WRITE);
+    my_reg.Write(vi.sz_value_name, vi.sz_value);
+    my_reg.Close();
 }
 
 // CStartupManagerDlg 消息处理程序
@@ -168,7 +211,6 @@ BOOL CStartupManagerDlg::OnInitDialog()
     SetIcon(m_hIcon, FALSE);		// 设置小图标
 
     // TODO: 在此添加额外的初始化代码
-    ReadItems(vi_vec);
     CRect rect;
     m_startup_list.GetClientRect(&rect);
     DWORD dw_style = m_startup_list.GetExtendedStyle();
@@ -181,36 +223,28 @@ BOOL CStartupManagerDlg::OnInitDialog()
     m_startup_list.InsertColumn(1, TEXT("路径"), LVCFMT_LEFT, 2*rect.Width()/7, 1);
     m_startup_list.InsertColumn(2, TEXT("键"), LVCFMT_LEFT, 1*rect.Width()/7, 2);
     m_startup_list.InsertColumn(3, TEXT("位置"), LVCFMT_LEFT, 2*rect.Width()/7, 3);
-    m_startup_list.InsertColumn(4, TEXT("状态"), LVCFMT_LEFT, rect.Width()/7, 4);
+    m_startup_list.InsertColumn(4, TEXT("禁用状态"), LVCFMT_LEFT, rect.Width()/7, 4);
 
     FileInfo fi;
-    MyRegistry my_reg(HKEY_CURRENT_USER);
-    my_reg.Open(TEXT("Software\\Microsoft\\Windows\\CurrentVersion\\Run"), KEY_ALL_ACCESS);
-    my_reg.Query(vi_vec);
-    my_reg.Close();
-    MyRegistry my_reg2(HKEY_LOCAL_MACHINE);
-    my_reg2.Open(TEXT("Software\\Microsoft\\Windows\\CurrentVersion\\Run"), KEY_ALL_ACCESS);
-    my_reg2.Query(vi_vec);
-    my_reg2.Close();
-    MyRegistry my_reg3(HKEY_LOCAL_MACHINE);
-    my_reg3.Open(TEXT("Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Run"), KEY_ALL_ACCESS);
-    my_reg3.Query(vi_vec);
-    my_reg3.Close();
+    AddItems(HKEY_CURRENT_USER, TEXT("Software\\Microsoft\\Windows\\CurrentVersion\\Run"), vi_vec);
+    AddItems(HKEY_LOCAL_MACHINE, TEXT("Software\\Microsoft\\Windows\\CurrentVersion\\Run"), vi_vec);
+    AddItems(HKEY_LOCAL_MACHINE, TEXT("Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Run"), vi_vec);
+    ReadDisabledItemsFromFile(vi_vec);
 
     for (ULONG i = 0; i < vi_vec.size(); ++i)
     {
         fi.Open(vi_vec[i].sz_value);
-        m_startup_list.InsertItem(i, fi.QueryValue(TEXT("FileDescription")));
+        m_startup_list.InsertItem(i, fi.GetFileDescription());
         m_startup_list.SetItemText(i, 1, vi_vec[i].sz_value);
-        if(vi_vec[i].hkey == HKEY_CLASSES_ROOT)
+        if(vi_vec[i].h_key == HKEY_CLASSES_ROOT)
             m_startup_list.SetItemText(i, 2, TEXT("HKEY_CLASSES_ROOT"));
-        else if (vi_vec[i].hkey == HKEY_CURRENT_USER)
+        else if (vi_vec[i].h_key == HKEY_CURRENT_USER)
             m_startup_list.SetItemText(i, 2, TEXT("HKEY_CURRENT_USER"));
-        else if (vi_vec[i].hkey == HKEY_LOCAL_MACHINE)
+        else if (vi_vec[i].h_key == HKEY_LOCAL_MACHINE)
             m_startup_list.SetItemText(i, 2, TEXT("HKEY_LOCAL_MACHINE"));
-        else if (vi_vec[i].hkey == HKEY_USERS)
+        else if (vi_vec[i].h_key == HKEY_USERS)
             m_startup_list.SetItemText(i, 2, TEXT("HKEY_USERS"));
-        else if (vi_vec[i].hkey == HKEY_CURRENT_CONFIG)
+        else if (vi_vec[i].h_key == HKEY_CURRENT_CONFIG)
             m_startup_list.SetItemText(i, 2, TEXT("HKEY_CURRENT_CONFIG"));
 
         m_startup_list.SetItemText(i, 3, vi_vec[i].sz_subkey);
@@ -285,21 +319,21 @@ void CStartupManagerDlg::OnBnClickedApplyButton()
         if (!ListView_GetCheckState(m_startup_list, i))
         {
             m_startup_list.SetItemText(i, 4, TEXT("已禁用"));
-            vi_vec[i].state = 0;
-            MyRegistry my_reg(vi_vec[i].hkey);
-            my_reg.Open(vi_vec[i].sz_subkey, KEY_ALL_ACCESS);
-            my_reg.DeleteValue(vi_vec[i].sz_value_name);
-            my_reg.Close();
+            DeleteItem(vi_vec[i]);
         }
         else
         {
             m_startup_list.SetItemText(i, 4, TEXT(""));
+            if (vi_vec[i].state == 0)
+            {
+                SetValueToReg(vi_vec[i]);
+            }
         }
     }
 }
 
 void CStartupManagerDlg::OnCancel()
 {
-    WriteItems(vi_vec);
+    WriteDisabledItemsToFile(vi_vec);
     CDialog::OnCancel();
 }

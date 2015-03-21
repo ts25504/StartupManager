@@ -83,6 +83,8 @@ TCHAR* FileInfo::QueryValue(const TCHAR* p_value_name)
     } *p_translate;
 
     bool b_err = true;
+    if (p_value_name == NULL)
+        goto exit;
     if (m_p_version_data == NULL)
         goto exit;
     HRESULT hr = 0;
@@ -119,4 +121,9 @@ exit:
         return (TCHAR*)p_data;
     else
         return TEXT("Î´Öª³ÌÐò");
+}
+
+TCHAR* FileInfo::GetFileDescription()
+{
+    return QueryValue(TEXT("FileDescription"));
 }

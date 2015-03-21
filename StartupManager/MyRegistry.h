@@ -11,7 +11,7 @@
 struct ValueInfo {
     TCHAR sz_value_name[MAX_VALUE_NAME];
     TCHAR sz_value[MAX_VALUE];
-    HKEY hkey;
+    HKEY h_key;
     TCHAR sz_subkey[MAX_PATH];
     int state;
 };
@@ -32,8 +32,8 @@ public:
     void Close();
 
 private:
-    HKEY m_hkey;
-    HKEY m_origin_hkey;
+    HKEY m_h_key;
+    HKEY m_h_origin_key;
     TCHAR m_sz_subkey[MAX_PATH];
 };
 
