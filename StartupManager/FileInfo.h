@@ -13,6 +13,7 @@ public:
     TCHAR* QueryValue(const TCHAR* p_value_name);
     void Close();
 private:
+    TCHAR* ParsePath(TCHAR* p_file_path);
     byte* m_p_version_data;
 };
 

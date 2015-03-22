@@ -21,32 +21,45 @@ void FileInfo::Close()
     }
 }
 
-bool FileInfo::Open(TCHAR* p_file_path)
+TCHAR* FileInfo::ParsePath(TCHAR* p_file_path)
 {
     TCHAR* p_parsed_path = new TCHAR[MAX_VALUE];
-    if (p_file_path == NULL)
-        goto exit;
     if (p_parsed_path == NULL)
-        goto exit;
+        return TEXT("error");
     memset(p_parsed_path, 0, MAX_VALUE*sizeof(TCHAR));
+    if (p_file_path[0] == TEXT('\"'))
+        ++p_file_path;
     memcpy(p_parsed_path, p_file_path, _tcslen(p_file_path)*sizeof(TCHAR));
-    if (!PathFileExists(p_parsed_path))
+    for (ULONG i = 0; i < _tcslen(p_parsed_path); ++i)
     {
-        if (p_parsed_path[0] == TEXT('\"'))
-            ++p_parsed_path;
-        for (ULONG i = 0; i < _tcslen(p_parsed_path); ++i)
+        if (p_parsed_path[i-3] == TEXT('.') &&
+            (p_parsed_path[i-2] == TEXT('e') || p_parsed_path[i-2] == TEXT('E')) &&
+            (p_parsed_path[i-1] == TEXT('x') || p_parsed_path[i-1] == TEXT('X')) &&
+            (p_parsed_path[i] == TEXT('e') || p_parsed_path[i] == TEXT('E')))
         {
-            if (p_parsed_path[i-3] == TEXT('.') &&
-                (p_parsed_path[i-2] == TEXT('e') || p_parsed_path[i-2] == TEXT('E')) &&
-                (p_parsed_path[i-1] == TEXT('x') || p_parsed_path[i-1] == TEXT('X')) &&
-                (p_parsed_path[i] == TEXT('e') || p_parsed_path[i] == TEXT('E')))
-            {
-                _tcsncpy_s(p_parsed_path, _tcslen(p_parsed_path)*sizeof(TCHAR), p_parsed_path, i+1);
-                break;
-            }
+            _tcsncpy_s(p_parsed_path, _tcslen(p_parsed_path)*sizeof(TCHAR), p_file_path, i+1);
+            break;
         }
     }
+    return p_parsed_path;
+}
+
+bool FileInfo::Open(TCHAR* p_file_path)
+{
     bool b_ret = false;
+    TCHAR* p_parsed_path = new TCHAR[MAX_VALUE];
+    if (p_file_path == NULL || p_parsed_path == NULL)
+        goto exit;
+    memset(p_parsed_path, 0, MAX_VALUE*sizeof(TCHAR));
+    if (!PathFileExists(p_file_path))
+    {
+        p_parsed_path = ParsePath(p_file_path);
+        if (_tcscmp(p_parsed_path, TEXT("error")) == 0)   // new error.
+            goto exit;
+    }
+    else
+        memcpy(p_parsed_path, p_file_path, _tcslen(p_file_path)*sizeof(TCHAR));
+
     DWORD dw_size = ::GetFileVersionInfoSize(p_parsed_path, NULL);
     if (dw_size == 0)
         goto exit;
@@ -56,7 +69,7 @@ bool FileInfo::Open(TCHAR* p_file_path)
         goto exit;
     memset(m_p_version_data, 0, dw_size);
 
-    long l_ret = ::GetFileVersionInfo((TCHAR*)p_parsed_path, 0, dw_size, (void**)m_p_version_data);
+    long l_ret = ::GetFileVersionInfo(p_parsed_path, 0, dw_size, (void**)m_p_version_data);
     if (l_ret == 0)
         goto exit;
 
