@@ -163,6 +163,7 @@
 			/>
 			<Tool
 				Name="VCManifestTool"
+				AdditionalManifestFiles="mani.xml"
 			/>
 			<Tool
 				Name="VCXDCMakeTool"
