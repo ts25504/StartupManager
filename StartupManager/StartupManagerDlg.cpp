@@ -154,59 +154,6 @@ void WriteDisabledItemsToFile(std::vector<ValueInfo>& vi_vec)
     fclose(fp);
 }
 
-void AddStartMenuItem(std::vector<ValueInfo>& vi_vec)
-{
-    OSVERSIONINFO osver = {0};
-    osver.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-    if (!::GetVersionEx(&osver))
-        return;
-
-    TCHAR sz_position[MAX_PATH] = {0};
-    TCHAR sz_startmenu_dir[MAX_PATH] = {0};
-    if (2 == osver.dwPlatformId)
-    {
-        if (6 == osver.dwMajorVersion)
-        {
-            _tcscpy_s(sz_startmenu_dir, MAX_PATH,
-                TEXT("C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\Startup\\*.*"));
-            _tcscpy_s(sz_position, MAX_PATH,
-                TEXT("C:\\ProgramData\\Microsoft\\Windows\\Start Menu\\Programs\\Startup"));
-        }
-        if (5 == osver.dwMajorVersion)
-        {
-            _tcscpy_s(sz_startmenu_dir, MAX_PATH,
-                TEXT("C:\\Documents and Settings\\All Users\\「开始」菜单\\程序\\启动\\*.*"));
-            _tcscpy_s(sz_position, MAX_PATH,
-                TEXT("C:\\Documents and Settings\\All Users\\「开始」菜单\\程序\\启动"));
-        }
-    }
-    WIN32_FIND_DATA file_data = {0};
-    HANDLE h_search = ::FindFirstFile(sz_startmenu_dir, &file_data);
-    if (h_search == INVALID_HANDLE_VALUE)
-        return;
-    BOOL b_not_finish = true;
-    TCHAR sz_path[MAX_PATH] = {0};
-    while (b_not_finish)
-    {
-        if (_tcscmp(file_data.cFileName, TEXT(".")) == 0 ||
-            _tcscmp(file_data.cFileName, TEXT("..")) == 0 ||
-            _tcscmp(file_data.cFileName, TEXT("desktop.ini")) == 0)
-        {
-            b_not_finish = ::FindNextFile(h_search, &file_data);
-            continue;
-        }
-        _stprintf_s(sz_path, TEXT("%s\\%s"), sz_position, file_data.cFileName);
-        ValueInfo vi;
-        vi.h_key = NULL;
-        _tcscpy_s(vi.sz_value_name, MAX_VALUE_NAME, file_data.cFileName);
-        _tcscpy_s(vi.sz_value, MAX_VALUE, sz_path);
-        _tcscpy_s(vi.sz_subkey, MAX_KEY_LENGTH, sz_position);
-        vi.state = 1;
-        vi_vec.push_back(vi);
-        b_not_finish = ::FindNextFile(h_search, &file_data);
-    }
-    ::FindClose(h_search);
-}
 void AddItems(HKEY h_key, const TCHAR* sz_subkey, std::vector<ValueInfo>& vi_vec)
 {
     MyRegistry my_reg(h_key);
@@ -271,17 +218,17 @@ BOOL CStartupManagerDlg::OnInitDialog()
     dw_style |= LVS_EX_CHECKBOXES;
     m_startup_list.SetExtendedStyle(dw_style);
 
-    m_startup_list.InsertColumn(0, TEXT("启动项"), LVCFMT_LEFT, 1*rect.Width()/7, 0);
-    m_startup_list.InsertColumn(1, TEXT("路径"), LVCFMT_LEFT, 2*rect.Width()/7, 1);
-    m_startup_list.InsertColumn(2, TEXT("键"), LVCFMT_LEFT, 1*rect.Width()/7, 2);
-    m_startup_list.InsertColumn(3, TEXT("位置"), LVCFMT_LEFT, 2*rect.Width()/7, 3);
-    m_startup_list.InsertColumn(4, TEXT("禁用状态"), LVCFMT_LEFT, rect.Width()/7, 4);
+    m_startup_list.InsertColumn(0, TEXT("启动项"), LVCFMT_LEFT, 1*rect.Width()/5, 0);
 
+    SHFILEINFO sfi;
+    HIMAGELIST h_image_list;
+    h_image_list =
+        (HIMAGELIST)SHGetFileInfo(TEXT(""), 0, &sfi, sizeof(SHFILEINFO), SHGFI_SYSICONINDEX | SHGFI_ICON);
+    m_startup_list.SetImageList(CImageList::FromHandle(h_image_list), LVSIL_NORMAL);
     FileInfo fi;
     AddItems(HKEY_CURRENT_USER, TEXT("Software\\Microsoft\\Windows\\CurrentVersion\\Run"), vi_vec);
     AddItems(HKEY_LOCAL_MACHINE, TEXT("Software\\Microsoft\\Windows\\CurrentVersion\\Run"), vi_vec);
     AddItems(HKEY_LOCAL_MACHINE, TEXT("Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Run"), vi_vec);
-    AddStartMenuItem(vi_vec);
     ReadDisabledItemsFromFile(vi_vec);
 
     for (ULONG i = 0; i < vi_vec.size(); ++i)
@@ -289,31 +236,16 @@ BOOL CStartupManagerDlg::OnInitDialog()
         fi.Open(vi_vec[i].sz_value);
         TCHAR sz_filename[MAX_PATH] = {0};
         _tcscpy_s(sz_filename, MAX_PATH, fi.GetFileDescription());
-        if (_tcscmp(sz_filename, TEXT("未知程序")) == 0)
-            m_startup_list.InsertItem(i, vi_vec[i].sz_value_name);
-        else
-            m_startup_list.InsertItem(i, sz_filename);
-        m_startup_list.SetItemText(i, 1, vi_vec[i].sz_value);
-        if(vi_vec[i].h_key == HKEY_CLASSES_ROOT)
-            m_startup_list.SetItemText(i, 2, TEXT("HKEY_CLASSES_ROOT"));
-        else if (vi_vec[i].h_key == HKEY_CURRENT_USER)
-            m_startup_list.SetItemText(i, 2, TEXT("HKEY_CURRENT_USER"));
-        else if (vi_vec[i].h_key == HKEY_LOCAL_MACHINE)
-            m_startup_list.SetItemText(i, 2, TEXT("HKEY_LOCAL_MACHINE"));
-        else if (vi_vec[i].h_key == HKEY_USERS)
-            m_startup_list.SetItemText(i, 2, TEXT("HKEY_USERS"));
-        else if (vi_vec[i].h_key == HKEY_CURRENT_CONFIG)
-            m_startup_list.SetItemText(i, 2, TEXT("HKEY_CURRENT_CONFIG"));
-
-        m_startup_list.SetItemText(i, 3, vi_vec[i].sz_subkey);
         fi.Close();
+        if (_tcscmp(sz_filename, TEXT("未知程序")) == 0)
+            m_startup_list.InsertItem(i, vi_vec[i].sz_value_name, fi.GetIconIndex(vi_vec[i].sz_value));
+        else
+            m_startup_list.InsertItem(i, sz_filename, fi.GetIconIndex(vi_vec[i].sz_value));
+        m_startup_list.SetItemText(i, 1, vi_vec[i].sz_value);
+
         if (vi_vec[i].state)
         {
             ListView_SetCheckState(m_startup_list, i, TRUE);
-        }
-        else
-        {
-            m_startup_list.SetItemText(i, 4, TEXT("已禁用"));
         }
     }
 
@@ -376,12 +308,10 @@ void CStartupManagerDlg::OnBnClickedApplyButton()
     {
         if (!ListView_GetCheckState(m_startup_list, i))
         {
-            m_startup_list.SetItemText(i, 4, TEXT("已禁用"));
             DeleteItem(vi_vec[i]);
         }
         else
         {
-            m_startup_list.SetItemText(i, 4, TEXT(""));
             if (vi_vec[i].state == 0)
             {
                 SetValueToReg(vi_vec[i]);

@@ -11,6 +11,7 @@ public:
     bool Open(TCHAR* p_file_path);
     TCHAR* GetFileDescription();
     TCHAR* QueryValue(const TCHAR* p_value_name);
+    int GetIconIndex(TCHAR* p_file_name);
     void Close();
 private:
     TCHAR* ParsePath(TCHAR* p_file_path);

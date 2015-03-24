@@ -26,7 +26,7 @@ TCHAR* FileInfo::ParsePath(TCHAR* p_file_path)
     TCHAR* p_parsed_path = new TCHAR[MAX_VALUE];
     if (p_parsed_path == NULL)
         return TEXT("error");
-    memset(p_parsed_path, 0, MAX_VALUE*sizeof(TCHAR));
+    memset(p_parsed_path, 0, MAX_VALUE);
     if (p_file_path[0] == TEXT('\"'))
         ++p_file_path;
     memcpy(p_parsed_path, p_file_path, _tcslen(p_file_path)*sizeof(TCHAR));
@@ -44,13 +44,41 @@ TCHAR* FileInfo::ParsePath(TCHAR* p_file_path)
     return p_parsed_path;
 }
 
+int FileInfo::GetIconIndex(TCHAR* p_file_path)
+{
+    SHFILEINFO s_info = {0};
+    int i_ret = -1;
+    TCHAR* p_parsed_path = new TCHAR[MAX_VALUE];
+    if (p_file_path == NULL || p_parsed_path == NULL)
+        goto exit;
+    memset(p_parsed_path, 0, MAX_VALUE);
+    if (!PathFileExists(p_file_path))
+    {
+        p_parsed_path = ParsePath(p_file_path);
+        if (_tcscmp(p_parsed_path, TEXT("error")) == 0)
+            goto exit;
+    }
+    else
+        memcpy(p_parsed_path, p_file_path, _tcslen(p_file_path)*sizeof(TCHAR));
+    SHGetFileInfo(p_parsed_path, FILE_ATTRIBUTE_NORMAL, &s_info, sizeof(s_info),
+        SHGFI_USEFILEATTRIBUTES | SHGFI_ICON | SHGFI_SYSICONINDEX);
+    i_ret = s_info.iIcon;
+exit:
+    if (p_parsed_path)
+    {
+        delete[] p_parsed_path;
+        p_parsed_path = NULL;
+    }
+    return i_ret;
+}
+
 bool FileInfo::Open(TCHAR* p_file_path)
 {
     bool b_ret = false;
     TCHAR* p_parsed_path = new TCHAR[MAX_VALUE];
     if (p_file_path == NULL || p_parsed_path == NULL)
         goto exit;
-    memset(p_parsed_path, 0, MAX_VALUE*sizeof(TCHAR));
+    memset(p_parsed_path, 0, MAX_VALUE);
     if (!PathFileExists(p_file_path))
     {
         p_parsed_path = ParsePath(p_file_path);

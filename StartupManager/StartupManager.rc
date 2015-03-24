@@ -88,7 +88,7 @@ EXSTYLE WS_EX_APPWINDOW
 CAPTION "StartupManager"
 FONT 9, "宋体", 0, 0, 0x1
 BEGIN
-    CONTROL         "",IDC_STARTUP_LIST,"SysListView32",LVS_REPORT | LVS_SINGLESEL | LVS_ALIGNLEFT | WS_BORDER | WS_TABSTOP,7,7,435,202
+    CONTROL         "",IDC_STARTUP_LIST,"SysListView32",LVS_SINGLESEL | WS_BORDER | WS_TABSTOP,7,7,435,202
     PUSHBUTTON      "一键加速",IDC_APPLY_BUTTON,156,215,109,17
 END
 
@@ -115,13 +115,12 @@ BEGIN
     BEGIN
         BLOCK "080403a8"
         BEGIN
-            VALUE "CompanyName", "TODO: <公司名>"
-            VALUE "FileDescription", "TODO: <文件说明>"
+            VALUE "CompanyName", "猎豹移动"
+            VALUE "FileDescription", "开机启动项管理程序"
             VALUE "FileVersion", "1.0.0.1"
             VALUE "InternalName", "StartupManager.exe"
-            VALUE "LegalCopyright", "TODO: (C) <公司名>。保留所有权利。"
             VALUE "OriginalFilename", "StartupManager.exe"
-            VALUE "ProductName", "TODO: <产品名>"
+            VALUE "ProductName", "StartupManager"
             VALUE "ProductVersion", "1.0.0.1"
         END
     END
