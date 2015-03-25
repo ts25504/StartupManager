@@ -52,7 +52,7 @@ int FileInfo::GetIconIndex(TCHAR* p_file_path)
     if (p_file_path == NULL || p_parsed_path == NULL)
         goto exit;
     memset(p_parsed_path, 0, MAX_VALUE);
-    if (!PathFileExists(p_file_path))
+    if (!::PathFileExists(p_file_path))
     {
         p_parsed_path = ParsePath(p_file_path);
         if (_tcscmp(p_parsed_path, TEXT("error")) == 0)
@@ -60,8 +60,8 @@ int FileInfo::GetIconIndex(TCHAR* p_file_path)
     }
     else
         memcpy(p_parsed_path, p_file_path, _tcslen(p_file_path)*sizeof(TCHAR));
-    SHGetFileInfo(p_parsed_path, FILE_ATTRIBUTE_NORMAL, &s_info, sizeof(s_info),
-        SHGFI_USEFILEATTRIBUTES | SHGFI_ICON | SHGFI_SYSICONINDEX);
+    ::SHGetFileInfo(p_parsed_path, FILE_ATTRIBUTE_NORMAL, &s_info, sizeof(s_info),
+        SHGFI_USEFILEATTRIBUTES | SHGFI_LARGEICON | SHGFI_SYSICONINDEX);
     i_ret = s_info.iIcon;
 exit:
     if (p_parsed_path)
@@ -79,7 +79,7 @@ bool FileInfo::Open(TCHAR* p_file_path)
     if (p_file_path == NULL || p_parsed_path == NULL)
         goto exit;
     memset(p_parsed_path, 0, MAX_VALUE);
-    if (!PathFileExists(p_file_path))
+    if (!::PathFileExists(p_file_path))
     {
         p_parsed_path = ParsePath(p_file_path);
         if (_tcscmp(p_parsed_path, TEXT("error")) == 0)   // new error.
@@ -154,11 +154,36 @@ TCHAR* FileInfo::QueryValue(const TCHAR* p_value_name)
     b_err = false;
 exit:
     if (b_err || p_data == NULL)
-        return TEXT("Î´Öª³ÌÐò");
+        return TEXT("unknown");
     return (TCHAR*)p_data;
 }
 
 TCHAR* FileInfo::GetFileDescription()
 {
     return QueryValue(TEXT("FileDescription"));
+}
+
+TCHAR* FileInfo::GetInternelName()
+{
+    return QueryValue(TEXT("InternelName"));
+}
+
+TCHAR* FileInfo::GetLegalTradeMarks()
+{
+    return QueryValue(TEXT("LegalTradeMarks"));
+}
+
+TCHAR* FileInfo::GetOriginalFileName()
+{
+    return QueryValue(TEXT("OriginalFileName"));
+}
+
+TCHAR* FileInfo::GetProductName()
+{
+    return QueryValue(TEXT("ProductName"));
+}
+
+TCHAR* FileInfo::GetProductVersion()
+{
+    return QueryValue(TEXT("ProductVersion"));
 }

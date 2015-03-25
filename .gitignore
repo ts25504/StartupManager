@@ -196,4 +196,4 @@ FakesAssemblies/
 *.opt
 
 # Generated file
-DisabledItems.txt
+DisabledItems.*

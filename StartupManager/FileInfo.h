@@ -10,6 +10,11 @@ public:
     ~FileInfo();
     bool Open(TCHAR* p_file_path);
     TCHAR* GetFileDescription();
+    TCHAR* GetInternelName();
+    TCHAR* GetLegalTradeMarks();
+    TCHAR* GetOriginalFileName();
+    TCHAR* GetProductName();
+    TCHAR* GetProductVersion();
     TCHAR* QueryValue(const TCHAR* p_value_name);
     int GetIconIndex(TCHAR* p_file_name);
     void Close();

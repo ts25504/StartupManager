@@ -72,7 +72,7 @@ END_MESSAGE_MAP()
 void ReadDisabledItemsFromFile(std::vector<ValueInfo>& vi_vec)
 {
     FILE* fp = NULL;
-    errno_t err = fopen_s(&fp, "DisabledItems.txt", "r+");
+    errno_t err = fopen_s(&fp, "DisabledItems.ini", "r+");
     if (err != 0)
         return;
     if (feof(fp))
@@ -107,7 +107,8 @@ void ReadDisabledItemsFromFile(std::vector<ValueInfo>& vi_vec)
         {
             if (_tcscmp(vi_vec[i].sz_value_name, vi.sz_value_name) == 0 &&
                 _tcscmp(vi_vec[i].sz_value, vi_vec[i].sz_value) == 0 &&
-                _tcscmp(vi_vec[i].sz_subkey, vi.sz_subkey) == 0)
+                _tcscmp(vi_vec[i].sz_subkey, vi.sz_subkey) == 0 &&
+                vi_vec[i].h_key == vi.h_key)
             b_push = false;
         }
         if (b_push)
@@ -120,7 +121,7 @@ void ReadDisabledItemsFromFile(std::vector<ValueInfo>& vi_vec)
 void WriteDisabledItemsToFile(std::vector<ValueInfo>& vi_vec)
 {
     FILE* fp = NULL;
-    errno_t err = fopen_s(&fp, "DisabledItems.txt", "w+");
+    errno_t err = fopen_s(&fp, "DisabledItems.ini", "w+");
     if (err != 0)
         return;
     TCHAR sz_key[MAX_KEY_LENGTH] = {0};
@@ -164,19 +165,19 @@ void AddItems(HKEY h_key, const TCHAR* sz_subkey, std::vector<ValueInfo>& vi_vec
 
 void DeleteItem(ValueInfo& vi)
 {
-    vi.state = 0;
     MyRegistry my_reg(vi.h_key);
     my_reg.Open(vi.sz_subkey, KEY_SET_VALUE);
-    my_reg.DeleteValue(vi.sz_value_name);
+    if (my_reg.DeleteValue(vi.sz_value_name))
+        vi.state = 0;
     my_reg.Close();
 }
 
 void SetValueToReg(ValueInfo& vi)
 {
-    vi.state = 1;
     MyRegistry my_reg(vi.h_key);
     my_reg.Open(vi.sz_subkey, KEY_WRITE);
-    my_reg.Write(vi.sz_value_name, vi.sz_value);
+    if (my_reg.Write(vi.sz_value_name, vi.sz_value))
+        vi.state = 1;
     my_reg.Close();
 }
 
@@ -218,12 +219,9 @@ BOOL CStartupManagerDlg::OnInitDialog()
     dw_style |= LVS_EX_CHECKBOXES;
     m_startup_list.SetExtendedStyle(dw_style);
 
-    m_startup_list.InsertColumn(0, TEXT("启动项"), LVCFMT_LEFT, 1*rect.Width()/5, 0);
-
-    SHFILEINFO sfi;
-    HIMAGELIST h_image_list;
-    h_image_list =
-        (HIMAGELIST)SHGetFileInfo(TEXT(""), 0, &sfi, sizeof(SHFILEINFO), SHGFI_SYSICONINDEX | SHGFI_ICON);
+    SHFILEINFO sfi = {0};
+    HIMAGELIST h_image_list = 
+        (HIMAGELIST)::SHGetFileInfo(TEXT(""), 0, &sfi, sizeof(SHFILEINFO), SHGFI_SYSICONINDEX | SHGFI_LARGEICON);
     m_startup_list.SetImageList(CImageList::FromHandle(h_image_list), LVSIL_NORMAL);
     FileInfo fi;
     AddItems(HKEY_CURRENT_USER, TEXT("Software\\Microsoft\\Windows\\CurrentVersion\\Run"), vi_vec);
@@ -235,9 +233,9 @@ BOOL CStartupManagerDlg::OnInitDialog()
     {
         fi.Open(vi_vec[i].sz_value);
         TCHAR sz_filename[MAX_PATH] = {0};
-        _tcscpy_s(sz_filename, MAX_PATH, fi.GetFileDescription());
+        _tcscpy_s(sz_filename, MAX_PATH, fi.GetProductName());
         fi.Close();
-        if (_tcscmp(sz_filename, TEXT("未知程序")) == 0)
+        if (_tcscmp(sz_filename, TEXT("unknown")) == 0)
             m_startup_list.InsertItem(i, vi_vec[i].sz_value_name, fi.GetIconIndex(vi_vec[i].sz_value));
         else
             m_startup_list.InsertItem(i, sz_filename, fi.GetIconIndex(vi_vec[i].sz_value));
