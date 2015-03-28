@@ -29,6 +29,8 @@ protected:
 	afx_msg HCURSOR OnQueryDragIcon();
 	DECLARE_MESSAGE_MAP()
 public:
+    void DisplayIconView();
+    void DisplayReportView();
     CListCtrl m_startup_list;
     afx_msg void OnBnClickedApplyButton();
     void OnCancel();

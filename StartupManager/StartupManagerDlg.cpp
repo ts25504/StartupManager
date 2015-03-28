@@ -2,10 +2,12 @@
 //
 
 #include "stdafx.h"
+#include <locale>
 #include "StartupManager.h"
 #include "StartupManagerDlg.h"
-#include "MyRegistry.h"
+#include "RegistryRun.h"
 #include "FileInfo.h"
+#include "ListItems.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -69,116 +71,84 @@ BEGIN_MESSAGE_MAP(CStartupManagerDlg, CDialog)
     ON_BN_CLICKED(IDC_APPLY_BUTTON, &CStartupManagerDlg::OnBnClickedApplyButton)
 END_MESSAGE_MAP()
 
-void ReadDisabledItemsFromFile(std::vector<ValueInfo>& vi_vec)
+void CStartupManagerDlg::DisplayIconView()
 {
-    FILE* fp = NULL;
-    errno_t err = fopen_s(&fp, "DisabledItems.ini", "r+");
-    if (err != 0)
-        return;
-    if (feof(fp))
-        return;
-    TCHAR sz_key[MAX_PATH] = {0};
-    size_t num_of_disabled_items = 0;
-    _ftscanf_s(fp, TEXT("%d\n"), &num_of_disabled_items);
-    for (ULONG i = 0; i < num_of_disabled_items; ++i)
-    {
-        BOOL b_push = true;
-        ValueInfo vi = {0};
-        _fgetts(vi.sz_value_name, MAX_VALUE_NAME, fp); // fgetts() read \0.
-        vi.sz_value_name[_tcslen(vi.sz_value_name)-1] = TEXT('\0');
-        _fgetts(vi.sz_value, MAX_VALUE, fp);
-        vi.sz_value[_tcslen(vi.sz_value)-1] = TEXT('\0');
-        _fgetts(sz_key, MAX_KEY_LENGTH, fp);
-        sz_key[_tcslen(sz_key)-1] = TEXT('\0');
-        _fgetts(vi.sz_subkey, MAX_KEY_LENGTH, fp);
-        vi.sz_subkey[_tcslen(vi.sz_subkey)-1] = TEXT('\0');
-        _ftscanf_s(fp, TEXT("%d\n"), &vi.state);
-        if(_tcscmp(sz_key, TEXT("HKEY_CLASSES_ROOT")) == 0)
-            vi.h_key = HKEY_CLASSES_ROOT;
-        else if (_tcscmp(sz_key, TEXT("HKEY_CURRENT_USER")) == 0)
-            vi.h_key = HKEY_CURRENT_USER;
-        else if (_tcscmp(sz_key, TEXT("HKEY_LOCAL_MACHINE")) == 0)
-            vi.h_key = HKEY_LOCAL_MACHINE;
-        else if (_tcscmp(sz_key, TEXT("HKEY_USERS\n")) == 0)
-            vi.h_key = HKEY_USERS;
-        else if (_tcscmp(sz_key, TEXT("HKEY_CURRENT_CONFIG")) == 0)
-            vi.h_key = HKEY_CURRENT_CONFIG;
-        for (ULONG i = 0; i < vi_vec.size(); ++i)
-        {
-            if (_tcscmp(vi_vec[i].sz_value_name, vi.sz_value_name) == 0 &&
-                _tcscmp(vi_vec[i].sz_value, vi_vec[i].sz_value) == 0 &&
-                _tcscmp(vi_vec[i].sz_subkey, vi.sz_subkey) == 0 &&
-                vi_vec[i].h_key == vi.h_key)
-            b_push = false;
-        }
-        if (b_push)
-            vi_vec.push_back(vi);
-    }
+    CRect rect;
+    m_startup_list.GetClientRect(&rect);
+    DWORD dw_style = m_startup_list.GetExtendedStyle();
+    dw_style |= LVS_EX_FULLROWSELECT;
+    dw_style |= LVS_EX_GRIDLINES;
+    dw_style |= LVS_EX_CHECKBOXES;
+    m_startup_list.SetExtendedStyle(dw_style);
 
-    fclose(fp);
-}
-
-void WriteDisabledItemsToFile(std::vector<ValueInfo>& vi_vec)
-{
-    FILE* fp = NULL;
-    errno_t err = fopen_s(&fp, "DisabledItems.ini", "w+");
-    if (err != 0)
-        return;
-    TCHAR sz_key[MAX_KEY_LENGTH] = {0};
-    size_t num_of_disabled_items = 0;
+    SHFILEINFO sfi = {0};
+    HIMAGELIST h_image_list = 
+        (HIMAGELIST)::SHGetFileInfo(TEXT(""), 0, &sfi, sizeof(SHFILEINFO), SHGFI_SYSICONINDEX | SHGFI_LARGEICON);
+    m_startup_list.SetImageList(CImageList::FromHandle(h_image_list), LVSIL_NORMAL);
+    FileInfo fi;
     for (ULONG i = 0; i < vi_vec.size(); ++i)
     {
-        if (vi_vec[i].state == 0)
-            ++num_of_disabled_items;
-    }
-    _ftprintf(fp, TEXT("%d\n"), num_of_disabled_items);
-    for (ULONG i = 0; i < vi_vec.size(); ++i)
-    {
-        if (vi_vec[i].state == 0)
-        {
-            if(vi_vec[i].h_key == HKEY_CLASSES_ROOT)
-                _tcscpy_s(sz_key, MAX_KEY_LENGTH, TEXT("HKEY_CLASSES_ROOT"));
-            else if (vi_vec[i].h_key == HKEY_CURRENT_USER)
-                _tcscpy_s(sz_key, MAX_KEY_LENGTH, TEXT("HKEY_CURRENT_USER"));
-            else if (vi_vec[i].h_key == HKEY_LOCAL_MACHINE)
-                _tcscpy_s(sz_key, MAX_KEY_LENGTH, TEXT("HKEY_LOCAL_MACHINE"));
-            else if (vi_vec[i].h_key == HKEY_USERS)
-                _tcscpy_s(sz_key, MAX_KEY_LENGTH, TEXT("HKEY_USERS"));
-            else if (vi_vec[i].h_key == HKEY_CURRENT_CONFIG)
-                _tcscpy_s(sz_key, MAX_KEY_LENGTH, TEXT("HKEY_CURRENT_CONFIG"));
+        if (_tcscmp(vi_vec[i].sz_product_name, TEXT("unknown")) == 0)
+            m_startup_list.InsertItem(i, vi_vec[i].sz_value_name, fi.GetIconIndex(vi_vec[i].sz_value));
+        else
+            m_startup_list.InsertItem(i, vi_vec[i].sz_product_name, fi.GetIconIndex(vi_vec[i].sz_value));
+        m_startup_list.SetItemText(i, 1, vi_vec[i].sz_value);
 
-            _ftprintf(fp, TEXT("%s\n%s\n%s\n%s\n"), vi_vec[i].sz_value_name, vi_vec[i].sz_value,
-                sz_key, vi_vec[i].sz_subkey);
-            _ftprintf(fp, TEXT("%d\n"), vi_vec[i].state);
+        if (vi_vec[i].state)
+        {
+            ListView_SetCheckState(m_startup_list, i, TRUE);
         }
     }
-    fclose(fp);
 }
 
-void AddItems(HKEY h_key, const TCHAR* sz_subkey, std::vector<ValueInfo>& vi_vec)
+void CStartupManagerDlg::DisplayReportView()
 {
-    MyRegistry my_reg(h_key);
-    my_reg.Open(sz_subkey, KEY_READ);
-    my_reg.Query(vi_vec);
-    my_reg.Close();
-}
+    CRect rect;
+    m_startup_list.GetClientRect(&rect);
+    DWORD dw_style = m_startup_list.GetExtendedStyle();
+    dw_style |= LVS_EX_FULLROWSELECT;
+    dw_style |= LVS_EX_GRIDLINES;
+    dw_style |= LVS_EX_CHECKBOXES;
+    m_startup_list.SetExtendedStyle(dw_style);
 
-void DeleteItem(ValueInfo& vi)
-{
-    MyRegistry my_reg(vi.h_key);
-    my_reg.Open(vi.sz_subkey, KEY_SET_VALUE);
-    if (my_reg.DeleteValue(vi.sz_value_name))
-        vi.state = 0;
-    my_reg.Close();
-}
+    m_startup_list.InsertColumn(0, TEXT("启动项"), LVCFMT_LEFT, rect.Width()/7, 0);
+    m_startup_list.InsertColumn(1, TEXT("路径"), LVCFMT_LEFT, 2*rect.Width()/7, 0);
+    m_startup_list.InsertColumn(2, TEXT("键"), LVCFMT_LEFT, rect.Width()/7, 0);
+    m_startup_list.InsertColumn(3, TEXT("位置"), LVCFMT_LEFT, 2*rect.Width()/7, 0);
+    m_startup_list.InsertColumn(4, TEXT("禁用情况"), LVCFMT_LEFT, rect.Width()/7, 0);
 
-void SetValueToReg(ValueInfo& vi)
-{
-    MyRegistry my_reg(vi.h_key);
-    my_reg.Open(vi.sz_subkey, KEY_WRITE);
-    if (my_reg.Write(vi.sz_value_name, vi.sz_value))
-        vi.state = 1;
-    my_reg.Close();
+    for (ULONG i = 0; i < vi_vec.size(); ++i)
+    {
+        if (_tcscmp(vi_vec[i].sz_product_name, TEXT("unknown")) == 0)
+            m_startup_list.InsertItem(i, vi_vec[i].sz_value_name);
+        else
+            m_startup_list.InsertItem(i, vi_vec[i].sz_product_name);
+        m_startup_list.SetItemText(i, 1, vi_vec[i].sz_value);
+
+        if (vi_vec[i].h_key == HKEY_CLASSES_ROOT)
+            m_startup_list.SetItemText(i, 2, TEXT("HKEY_CLASSES_ROOT"));
+        else if (vi_vec[i].h_key == HKEY_CURRENT_USER)
+            m_startup_list.SetItemText(i, 2, TEXT("HKEY_CURRENT_USER"));
+        else if (vi_vec[i].h_key == HKEY_LOCAL_MACHINE)
+            m_startup_list.SetItemText(i, 2, TEXT("HKEY_LOCAL_MACHINE"));
+        else if (vi_vec[i].h_key == HKEY_USERS)
+            m_startup_list.SetItemText(i, 2, TEXT("HKEY_USERS"));
+        else if (vi_vec[i].h_key == HKEY_CURRENT_CONFIG)
+            m_startup_list.SetItemText(i, 2, TEXT("HKEY_CURRENT_CONFIG"));
+        else
+            m_startup_list.SetItemText(i, 2, TEXT(""));
+
+        m_startup_list.SetItemText(i, 3, vi_vec[i].sz_subkey);
+
+        if (vi_vec[i].state)
+        {
+            ListView_SetCheckState(m_startup_list, i, TRUE);
+        }
+        else
+        {
+            m_startup_list.SetItemText(i, 4, TEXT("已禁用"));
+        }
+    }
 }
 
 // CStartupManagerDlg 消息处理程序
@@ -211,41 +181,17 @@ BOOL CStartupManagerDlg::OnInitDialog()
     SetIcon(m_hIcon, FALSE); // 设置小图标
 
     // TODO: 在此添加额外的初始化代码
-    CRect rect;
-    m_startup_list.GetClientRect(&rect);
-    DWORD dw_style = m_startup_list.GetExtendedStyle();
-    dw_style |= LVS_EX_FULLROWSELECT;
-    dw_style |= LVS_EX_GRIDLINES;
-    dw_style |= LVS_EX_CHECKBOXES;
-    m_startup_list.SetExtendedStyle(dw_style);
 
-    SHFILEINFO sfi = {0};
-    HIMAGELIST h_image_list = 
-        (HIMAGELIST)::SHGetFileInfo(TEXT(""), 0, &sfi, sizeof(SHFILEINFO), SHGFI_SYSICONINDEX | SHGFI_LARGEICON);
-    m_startup_list.SetImageList(CImageList::FromHandle(h_image_list), LVSIL_NORMAL);
-    FileInfo fi;
-    AddItems(HKEY_CURRENT_USER, TEXT("Software\\Microsoft\\Windows\\CurrentVersion\\Run"), vi_vec);
-    AddItems(HKEY_LOCAL_MACHINE, TEXT("Software\\Microsoft\\Windows\\CurrentVersion\\Run"), vi_vec);
-    AddItems(HKEY_LOCAL_MACHINE, TEXT("Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Run"), vi_vec);
-    ReadDisabledItemsFromFile(vi_vec);
+    ::setlocale(LC_CTYPE, "");
 
-    for (ULONG i = 0; i < vi_vec.size(); ++i)
-    {
-        fi.Open(vi_vec[i].sz_value);
-        TCHAR sz_filename[MAX_PATH] = {0};
-        _tcscpy_s(sz_filename, MAX_PATH, fi.GetProductName());
-        fi.Close();
-        if (_tcscmp(sz_filename, TEXT("unknown")) == 0)
-            m_startup_list.InsertItem(i, vi_vec[i].sz_value_name, fi.GetIconIndex(vi_vec[i].sz_value));
-        else
-            m_startup_list.InsertItem(i, sz_filename, fi.GetIconIndex(vi_vec[i].sz_value));
-        m_startup_list.SetItemText(i, 1, vi_vec[i].sz_value);
+    ListItems::GetInstance()->AddItems(HKEY_CURRENT_USER, TEXT("Software\\Microsoft\\Windows\\CurrentVersion\\Run"), vi_vec);
+    ListItems::GetInstance()->AddItems(HKEY_LOCAL_MACHINE, TEXT("Software\\Microsoft\\Windows\\CurrentVersion\\Run"), vi_vec);
+    ListItems::GetInstance()->AddItems(HKEY_LOCAL_MACHINE, TEXT("Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Run"), vi_vec);
+    ListItems::GetInstance()->AddItems(vi_vec);
+    ListItems::GetInstance()->ReadDisabledItemsFromFile(vi_vec);
 
-        if (vi_vec[i].state)
-        {
-            ListView_SetCheckState(m_startup_list, i, TRUE);
-        }
-    }
+    //DisplayIconView();
+    DisplayReportView();
 
     return TRUE;  // 除非将焦点设置到控件，否则返回 TRUE
 }
@@ -306,13 +252,14 @@ void CStartupManagerDlg::OnBnClickedApplyButton()
     {
         if (!ListView_GetCheckState(m_startup_list, i))
         {
-            DeleteItem(vi_vec[i]);
+            m_startup_list.SetItemText(i, 4, TEXT("已禁用"));
+            ListItems::GetInstance()->DeleteItem(vi_vec[i]);
         }
         else
         {
             if (vi_vec[i].state == 0)
             {
-                SetValueToReg(vi_vec[i]);
+                ListItems::GetInstance()->ResetItem(vi_vec[i]);
             }
         }
     }
@@ -320,6 +267,6 @@ void CStartupManagerDlg::OnBnClickedApplyButton()
 
 void CStartupManagerDlg::OnCancel()
 {
-    WriteDisabledItemsToFile(vi_vec);
+    ListItems::GetInstance()->WriteDisabledItemsToFile(vi_vec);
     CDialog::OnCancel();
 }

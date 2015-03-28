@@ -1,18 +1,19 @@
 #include "stdafx.h"
-#include "MyRegistry.h"
+#include "RegistryRun.h"
+#include "FileInfo.h"
 
-MyRegistry::MyRegistry(HKEY h_key)
+RegistryRun::RegistryRun(HKEY h_key)
 {
     m_h_key = h_key;
     m_h_origin_key = h_key;
     memset(m_sz_subkey, 0, MAX_KEY_LENGTH);
 }
-MyRegistry::~MyRegistry()
+RegistryRun::~RegistryRun()
 {
     Close();
 }
 
-bool MyRegistry::CreateKey(const TCHAR* lp_subkey, REGSAM sam_desired)
+bool RegistryRun::CreateKey(const TCHAR* lp_subkey, REGSAM sam_desired)
 {
     HKEY h_key = NULL;
     DWORD dw_disposition = 0;
@@ -38,7 +39,7 @@ exit:
     return b_ret;
 }
 
-bool MyRegistry::Open(const TCHAR* lp_subkey, REGSAM sam_desired)
+bool RegistryRun::Open(const TCHAR* lp_subkey, REGSAM sam_desired)
 {
     HKEY h_key = NULL;
     bool b_ret = false;
@@ -59,7 +60,7 @@ exit:
     return b_ret;
 }
 
-bool MyRegistry::DeleteValue(const TCHAR* lp_valuename)
+bool RegistryRun::DeleteValue(const TCHAR* lp_valuename)
 {
     long l_ret = ::RegDeleteValue(m_h_key, lp_valuename);
     bool b_ret = false;
@@ -72,7 +73,7 @@ exit:
     return b_ret;
 }
 
-bool MyRegistry::DeleteKey(const TCHAR* lp_subkey)
+bool RegistryRun::DeleteKey(const TCHAR* lp_subkey)
 {
     long l_ret = ::RegDeleteKeyEx(m_h_key, lp_subkey, KEY_WOW64_64KEY, 0);
     bool b_ret = false;
@@ -85,7 +86,7 @@ exit:
     return b_ret;
 }
 
-bool MyRegistry::Read(const TCHAR* lp_valuename, byte* lp_data)
+bool RegistryRun::Read(const TCHAR* lp_valuename, byte* lp_data)
 {
     DWORD dw_size = 0;
     DWORD dw_type = 0;
@@ -121,7 +122,7 @@ exit:
     return b_ret;
 }
 
-bool MyRegistry::Write(const TCHAR* lp_valuename, const TCHAR* lp_data)
+bool RegistryRun::Write(const TCHAR* lp_valuename, const TCHAR* lp_data)
 {
     long l_ret = ::RegSetValueEx(
         m_h_key,
@@ -143,7 +144,7 @@ exit:
     return b_ret;
 }
 
-void MyRegistry::Close()
+void RegistryRun::Close()
 {
     if (m_h_key)
     {
@@ -157,7 +158,7 @@ void MyRegistry::Close()
     }
 }
 
-bool MyRegistry::Query(std::vector<ValueInfo>& vi_vec)
+bool RegistryRun::Query(std::vector<ValueInfo>& vi_vec)
 { 
     TCHAR sz_ach_key[MAX_KEY_LENGTH] = {0};   // buffer for subkey name
     DWORD dw_cb_name = 0;                     // size of name string
@@ -171,6 +172,8 @@ bool MyRegistry::Query(std::vector<ValueInfo>& vi_vec)
     DWORD dw_cb_max_valuedata = 0;            // longest value data
     DWORD dw_cb_security_descriptor = 0;      // size of security descriptor
     FILETIME ft_lastwritetime = {0};          // last write time
+
+    FileInfo fi;
 
     DWORD i = 0;
     long l_ret = 0;
@@ -224,6 +227,9 @@ bool MyRegistry::Query(std::vector<ValueInfo>& vi_vec)
                 (byte*)vi.sz_value,
                 &dw_cch_data);
 
+            fi.Open(vi.sz_value);
+            _tcscpy_s(vi.sz_product_name, MAX_PATH, fi.GetProductName());
+            fi.Close();
             if (l_ret == ERROR_SUCCESS )
             {
                 vi_vec.push_back(vi);

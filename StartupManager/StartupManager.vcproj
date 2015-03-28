@@ -198,7 +198,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\MyRegistry.cc"
+				RelativePath=".\ListItems.cc"
+				>
+			</File>
+			<File
+				RelativePath=".\RegistryRun.cc"
 				>
 			</File>
 			<File
@@ -240,7 +244,11 @@
 				>
 			</File>
 			<File
-				RelativePath=".\MyRegistry.h"
+				RelativePath=".\ListItems.h"
+				>
+			</File>
+			<File
+				RelativePath=".\RegistryRun.h"
 				>
 			</File>
 			<File

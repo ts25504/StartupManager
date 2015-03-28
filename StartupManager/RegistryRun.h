@@ -10,16 +10,17 @@
 struct ValueInfo {
     TCHAR sz_value_name[MAX_VALUE_NAME];
     TCHAR sz_value[MAX_VALUE];
+    TCHAR sz_product_name[MAX_PATH];
     HKEY h_key;
     TCHAR sz_subkey[MAX_KEY_LENGTH];
     int state;
 };
 
-class MyRegistry
+class RegistryRun
 {
 public:
-    MyRegistry(HKEY h_key);
-    ~MyRegistry();
+    RegistryRun(HKEY h_key);
+    ~RegistryRun();
 
     bool CreateKey(const TCHAR* lp_subkey, REGSAM sam_desired);
     bool Open(const TCHAR* lp_subkey, REGSAM sam_desired);
