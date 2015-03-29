@@ -1,19 +1,20 @@
 #include "stdafx.h"
-#include "RegistryRun.h"
-#include "FileInfo.h"
 
-RegistryRun::RegistryRun(HKEY h_key)
+#include "TSRegistry.h"
+#include "TSFileVersionInfo.h"
+
+TSRegistry::TSRegistry(HKEY h_key)
 {
     m_h_key = h_key;
     m_h_origin_key = h_key;
     memset(m_sz_subkey, 0, MAX_KEY_LENGTH);
 }
-RegistryRun::~RegistryRun()
+TSRegistry::~TSRegistry()
 {
     Close();
 }
 
-bool RegistryRun::CreateKey(const wchar_t* lp_subkey, REGSAM sam_desired)
+bool TSRegistry::CreateKey(const wchar_t* lp_subkey, REGSAM sam_desired)
 {
     HKEY h_key = NULL;
     DWORD dw_disposition = 0;
@@ -39,7 +40,7 @@ exit:
     return b_ret;
 }
 
-bool RegistryRun::Open(const wchar_t* p_subkey, REGSAM sam_desired)
+bool TSRegistry::Open(const wchar_t* p_subkey, REGSAM sam_desired)
 {
     HKEY h_key = NULL;
     bool b_ret = false;
@@ -60,7 +61,7 @@ exit:
     return b_ret;
 }
 
-bool RegistryRun::DeleteValue(const wchar_t* p_value_name)
+bool TSRegistry::DeleteValue(const wchar_t* p_value_name)
 {
     long l_ret = ::RegDeleteValue(m_h_key, p_value_name);
     bool b_ret = false;
@@ -73,7 +74,7 @@ exit:
     return b_ret;
 }
 
-bool RegistryRun::DeleteKey(const wchar_t* p_subkey)
+bool TSRegistry::DeleteKey(const wchar_t* p_subkey)
 {
     long l_ret = ::RegDeleteKeyEx(m_h_key, p_subkey, KEY_WOW64_64KEY, 0);
     bool b_ret = false;
@@ -86,7 +87,7 @@ exit:
     return b_ret;
 }
 
-bool RegistryRun::Read(const wchar_t* p_value_name, byte* p_data)
+bool TSRegistry::Read(const wchar_t* p_value_name, byte* p_data)
 {
     DWORD dw_size = 0;
     DWORD dw_type = 0;
@@ -122,7 +123,7 @@ exit:
     return b_ret;
 }
 
-bool RegistryRun::Write(const wchar_t* p_value_name, const wchar_t* p_data)
+bool TSRegistry::Write(const wchar_t* p_value_name, const wchar_t* p_data)
 {
     long l_ret = ::RegSetValueEx(
         m_h_key,
@@ -144,7 +145,7 @@ exit:
     return b_ret;
 }
 
-void RegistryRun::Close()
+void TSRegistry::Close()
 {
     if (m_h_key)
     {
@@ -158,11 +159,11 @@ void RegistryRun::Close()
     }
 }
 
-bool RegistryRun::Query(std::vector<ValueInfo>& vi_vec)
+bool TSRegistry::Query(std::vector<ValueInfo>& vi_vec)
 { 
-    wchar_t sz_ach_key[MAX_KEY_LENGTH] = {0};   // buffer for subkey name
+    wchar_t sz_ach_key[MAX_KEY_LENGTH] = {0}; // buffer for subkey name
     DWORD dw_cb_name = 0;                     // size of name string
-    wchar_t sz_ach_class[MAX_PATH] = L"";  // buffer for class name
+    wchar_t sz_ach_class[MAX_PATH] = L"";     // buffer for class name
     DWORD dw_cch_classname = MAX_PATH;        // size of class string
     DWORD dw_c_subkeys = 0;                   // number of subkeys
     DWORD dw_cb_max_subKey = 0;               // longest subkey size
@@ -173,7 +174,7 @@ bool RegistryRun::Query(std::vector<ValueInfo>& vi_vec)
     DWORD dw_cb_security_descriptor = 0;      // size of security descriptor
     FILETIME ft_lastwritetime = {0};          // last write time
 
-    FileInfo fi;
+    TSFileVersionInfo fi;
 
     DWORD i = 0;
     long l_ret = 0;
@@ -227,7 +228,8 @@ bool RegistryRun::Query(std::vector<ValueInfo>& vi_vec)
                 (byte*)vi.sz_value,
                 &dw_cch_data);
 
-            fi.Open(vi.sz_value);
+            wchar_t* p_parsed_path = Utils::GetInstance()->ParsePath(vi.sz_value);
+            fi.Open(p_parsed_path);
             wcscpy_s(vi.sz_product_name, MAX_PATH, fi.GetProductName());
             fi.Close();
             if (l_ret == ERROR_SUCCESS )

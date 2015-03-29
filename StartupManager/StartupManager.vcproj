@@ -194,18 +194,6 @@
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
 			<File
-				RelativePath=".\FileInfo.cc"
-				>
-			</File>
-			<File
-				RelativePath=".\ListItems.cc"
-				>
-			</File>
-			<File
-				RelativePath=".\RegistryRun.cc"
-				>
-			</File>
-			<File
 				RelativePath=".\StartupManager.cpp"
 				>
 			</File>
@@ -233,6 +221,18 @@
 					/>
 				</FileConfiguration>
 			</File>
+			<File
+				RelativePath=".\TSFileVersionInfo.cc"
+				>
+			</File>
+			<File
+				RelativePath=".\TSRegistry.cc"
+				>
+			</File>
+			<File
+				RelativePath=".\Utils.cc"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Í·ÎÄ¼þ"
@@ -241,18 +241,6 @@
 			>
 			<File
 				RelativePath=".\Constants.h"
-				>
-			</File>
-			<File
-				RelativePath=".\FileInfo.h"
-				>
-			</File>
-			<File
-				RelativePath=".\ListItems.h"
-				>
-			</File>
-			<File
-				RelativePath=".\RegistryRun.h"
 				>
 			</File>
 			<File
@@ -269,6 +257,18 @@
 			</File>
 			<File
 				RelativePath=".\stdafx.h"
+				>
+			</File>
+			<File
+				RelativePath=".\TSFileVersionInfo.h"
+				>
+			</File>
+			<File
+				RelativePath=".\TSRegistry.h"
+				>
+			</File>
+			<File
+				RelativePath=".\Utils.h"
 				>
 			</File>
 		</Filter>

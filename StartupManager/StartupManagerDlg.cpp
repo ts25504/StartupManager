@@ -5,9 +5,9 @@
 #include <locale>
 #include "StartupManager.h"
 #include "StartupManagerDlg.h"
-#include "RegistryRun.h"
-#include "FileInfo.h"
-#include "ListItems.h"
+#include "TSRegistry.h"
+#include "TSFileVersionInfo.h"
+#include "Utils.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -85,7 +85,7 @@ void CStartupManagerDlg::DisplayIconView()
     HIMAGELIST h_image_list = 
         (HIMAGELIST)::SHGetFileInfo(L"", 0, &sfi, sizeof(SHFILEINFO), SHGFI_SYSICONINDEX | SHGFI_LARGEICON);
     m_startup_list.SetImageList(CImageList::FromHandle(h_image_list), LVSIL_NORMAL);
-    FileInfo fi;
+    TSFileVersionInfo fi;
     for (ULONG i = 0; i < vi_vec.size(); ++i)
     {
         if (wcscmp(vi_vec[i].sz_product_name, L"unknown") == 0)
@@ -184,11 +184,11 @@ BOOL CStartupManagerDlg::OnInitDialog()
 
     ::setlocale(LC_CTYPE, "");
 
-    ListItems::GetInstance()->AddItems(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Run", vi_vec);
-    ListItems::GetInstance()->AddItems(HKEY_LOCAL_MACHINE, L"Software\\Microsoft\\Windows\\CurrentVersion\\Run", vi_vec);
-    ListItems::GetInstance()->AddItems(HKEY_LOCAL_MACHINE, L"Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Run", vi_vec);
-    ListItems::GetInstance()->AddItems(vi_vec);
-    ListItems::GetInstance()->ReadDisabledItemsFromFile(vi_vec);
+    Utils::GetInstance()->AddItems(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Run", vi_vec);
+    Utils::GetInstance()->AddItems(HKEY_LOCAL_MACHINE, L"Software\\Microsoft\\Windows\\CurrentVersion\\Run", vi_vec);
+    Utils::GetInstance()->AddItems(HKEY_LOCAL_MACHINE, L"Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Run", vi_vec);
+    Utils::GetInstance()->AddItems(vi_vec);
+    Utils::GetInstance()->ReadDisabledItemsFromFile(vi_vec);
 
     //DisplayIconView();
     DisplayReportView();
@@ -253,14 +253,14 @@ void CStartupManagerDlg::OnBnClickedApplyButton()
         if (!ListView_GetCheckState(m_startup_list, i))
         {
             m_startup_list.SetItemText(i, 4, L"ÒÑ½ûÓÃ");
-            ListItems::GetInstance()->DeleteItem(vi_vec[i]);
+            Utils::GetInstance()->DeleteItem(vi_vec[i]);
         }
         else
         {
             m_startup_list.SetItemText(i, 4, L"");
             if (vi_vec[i].state == 0)
             {
-                ListItems::GetInstance()->ResetItem(vi_vec[i]);
+                Utils::GetInstance()->ResetItem(vi_vec[i]);
             }
         }
     }
@@ -268,6 +268,6 @@ void CStartupManagerDlg::OnBnClickedApplyButton()
 
 void CStartupManagerDlg::OnCancel()
 {
-    ListItems::GetInstance()->WriteDisabledItemsToFile(vi_vec);
+    Utils::GetInstance()->WriteDisabledItemsToFile(vi_vec);
     CDialog::OnCancel();
 }

@@ -1,22 +1,28 @@
 #include "stdafx.h"
-#include <shlobj.h>
-#include "ListItems.h"
-#include "FileInfo.h"
 
-ListItems* ListItems::GetInstance()
+#include <Shlwapi.h>
+
+#include "Utils.h"
+#include "TSRegistry.h"
+#include "TSFileVersionInfo.h"
+
+Utils* Utils::GetInstance()
 {
-    static ListItems li;
-    return &li;
+    static Utils utils;
+    return &utils;
 }
 
-void ListItems::ReadDisabledItemsFromFile(std::vector<ValueInfo>& vi_vec)
+void Utils::ReadDisabledItemsFromFile(std::vector<ValueInfo>& vi_vec)
 {
     FILE* fp = NULL;
     errno_t err = fopen_s(&fp, "DisabledItems.ini", "r+");
     if (err != 0)
-        return;
+        goto exit;
     if (feof(fp))
-        return;
+    {
+        fclose(fp);
+        goto exit;
+    }
     wchar_t sz_key[MAX_PATH] = {0};
     size_t num_of_disabled_items = 0;
     fwscanf_s(fp, L"%d\n", &num_of_disabled_items);
@@ -61,14 +67,16 @@ void ListItems::ReadDisabledItemsFromFile(std::vector<ValueInfo>& vi_vec)
     }
 
     fclose(fp);
+exit:
+    return;
 }
 
-void ListItems::WriteDisabledItemsToFile(std::vector<ValueInfo>& vi_vec)
+void Utils::WriteDisabledItemsToFile(std::vector<ValueInfo>& vi_vec)
 {
     FILE* fp = NULL;
     errno_t err = fopen_s(&fp, "DisabledItems.ini", "w+");
     if (err != 0)
-        return;
+        goto exit;
     wchar_t sz_key[MAX_KEY_LENGTH] = {0};
     size_t num_of_disabled_items = 0;
     for (ULONG i = 0; i < vi_vec.size(); ++i)
@@ -98,24 +106,26 @@ void ListItems::WriteDisabledItemsToFile(std::vector<ValueInfo>& vi_vec)
         }
     }
     fclose(fp);
+exit:
+    return;
 }
 
-void ListItems::AddItems(HKEY h_key, const wchar_t* sz_subkey, std::vector<ValueInfo>& vi_vec)
+void Utils::AddItems(HKEY h_key, const wchar_t* sz_subkey, std::vector<ValueInfo>& vi_vec)
 {
-    RegistryRun my_reg(h_key);
+    TSRegistry my_reg(h_key);
     my_reg.Open(sz_subkey, KEY_READ);
     my_reg.Query(vi_vec);
     my_reg.Close();
 }
 
-void EnumFiles(std::vector<ValueInfo>& vi_vec, wchar_t* p_dir)
+void Utils::EnumFiles(std::vector<ValueInfo>& vi_vec, wchar_t* p_dir)
 {
     wchar_t sz_tmp[MAX_PATH] = {0};
     wchar_t sz_path[MAX_PATH] = {0};
     wcscpy_s(sz_tmp, MAX_PATH, p_dir);
     wcscat_s(sz_tmp, L"\\*.*");
     WIN32_FIND_DATA file_data = {0};
-    FileInfo fi;
+    TSFileVersionInfo fi;
     HANDLE h_search = ::FindFirstFile(sz_tmp, &file_data);
     if (h_search == INVALID_HANDLE_VALUE)
         return;
@@ -145,7 +155,7 @@ void EnumFiles(std::vector<ValueInfo>& vi_vec, wchar_t* p_dir)
     ::FindClose(h_search);
 }
 
-void ListItems::AddItems(std::vector<ValueInfo>& vi_vec)
+void Utils::AddItems(std::vector<ValueInfo>& vi_vec)
 {
     wchar_t sz_common_startup[MAX_PATH] = {0};
     wchar_t sz_startup[MAX_PATH] = {0};
@@ -155,11 +165,11 @@ void ListItems::AddItems(std::vector<ValueInfo>& vi_vec)
     EnumFiles(vi_vec, sz_startup);
 }
 
-void ListItems::DeleteItem(ValueInfo& vi)
+void Utils::DeleteItem(ValueInfo& vi)
 {
     if (vi.h_key)
     {
-        RegistryRun my_reg(vi.h_key);
+        TSRegistry my_reg(vi.h_key);
         my_reg.Open(vi.sz_subkey, KEY_SET_VALUE);
         if (my_reg.DeleteValue(vi.sz_value_name))
             vi.state = 0;
@@ -180,11 +190,11 @@ void ListItems::DeleteItem(ValueInfo& vi)
     }
 }
 
-void ListItems::ResetItem(ValueInfo& vi)
+void Utils::ResetItem(ValueInfo& vi)
 {
     if (vi.h_key)
     {
-        RegistryRun my_reg(vi.h_key);
+        TSRegistry my_reg(vi.h_key);
         my_reg.Open(vi.sz_subkey, KEY_WRITE);
         if (my_reg.Write(vi.sz_value_name, vi.sz_value))
             vi.state = 1;
@@ -203,4 +213,29 @@ void ListItems::ResetItem(ValueInfo& vi)
             return;
         vi.state = 1;
     }
+}
+
+wchar_t* Utils::ParsePath(const wchar_t* p_file_path)
+{
+    if (::PathFileExists(p_file_path))
+        return (wchar_t*)p_file_path;
+    wchar_t* p_parsed_path = new wchar_t[MAX_VALUE];
+    if (p_parsed_path == NULL)
+        return L"error";
+    memset(p_parsed_path, 0, MAX_VALUE);
+    if (p_file_path[0] == L'\"')
+        ++p_file_path;
+    memcpy(p_parsed_path, p_file_path, wcslen(p_file_path)*sizeof(wchar_t));
+    for (ULONG i = 0; i < wcslen(p_parsed_path); ++i)
+    {
+        if (p_parsed_path[i-3] == L'.' &&
+            (p_parsed_path[i-2] == L'e' || p_parsed_path[i-2] == L'E') &&
+            (p_parsed_path[i-1] == L'x' || p_parsed_path[i-1] == L'X') &&
+            (p_parsed_path[i] == L'e' || p_parsed_path[i] == L'E'))
+        {
+            wcsncpy_s(p_parsed_path, wcslen(p_parsed_path)*sizeof(wchar_t), p_file_path, i+1);
+            break;
+        }
+    }
+    return p_parsed_path;
 }

@@ -1,23 +1,16 @@
-#ifndef _MyRegistry_H_
-#define _MyRegistry_H_
+#ifndef _TSRegistry_H_
+#define _TSRegistry_H_
 
 #include <vector>
+
+#include "Utils.h"
 #include "Constants.h"
 
-struct ValueInfo {
-    wchar_t sz_value_name[MAX_VALUE_NAME];
-    wchar_t sz_value[MAX_VALUE];
-    wchar_t sz_product_name[MAX_PATH];
-    wchar_t sz_subkey[MAX_KEY_LENGTH];
-    HKEY h_key;
-    int state;
-};
-
-class RegistryRun
+class TSRegistry
 {
 public:
-    RegistryRun(HKEY h_key);
-    ~RegistryRun();
+    TSRegistry(HKEY h_key);
+    ~TSRegistry();
 
     bool CreateKey(const wchar_t* p_subkey, REGSAM sam_desired);
     bool Open(const wchar_t* p_subkey, REGSAM sam_desired);

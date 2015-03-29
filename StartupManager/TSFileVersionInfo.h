@@ -1,13 +1,13 @@
-#ifndef _FILEINFO_H_
-#define _FILEINFO_H_
+#ifndef _TSFileVersionInfo_H_
+#define _TSFileVersionInfo_H_
 
 #include "Constants.h"
 
-class FileInfo
+class TSFileVersionInfo
 {
 public:
-    FileInfo();
-    ~FileInfo();
+    TSFileVersionInfo();
+    ~TSFileVersionInfo();
     bool Open(const wchar_t* p_file_path);
     wchar_t* GetFileDescription();
     wchar_t* GetInternelName();
@@ -19,7 +19,6 @@ public:
     int GetIconIndex(const wchar_t* p_file_name);
     void Close();
 private:
-    wchar_t* ParsePath(const wchar_t* p_file_path);
     byte* m_p_version_data;
 };
 
