@@ -21,7 +21,7 @@ void FileInfo::Close()
     }
 }
 
-wchar_t* FileInfo::ParsePath(wchar_t* p_file_path)
+wchar_t* FileInfo::ParsePath(const wchar_t* p_file_path)
 {
     wchar_t* p_parsed_path = new wchar_t[MAX_VALUE];
     if (p_parsed_path == NULL)
@@ -44,7 +44,7 @@ wchar_t* FileInfo::ParsePath(wchar_t* p_file_path)
     return p_parsed_path;
 }
 
-int FileInfo::GetIconIndex(wchar_t* p_file_path)
+int FileInfo::GetIconIndex(const wchar_t* p_file_path)
 {
     SHFILEINFO s_info = {0};
     int i_ret = -1;
@@ -72,7 +72,7 @@ exit:
     return i_ret;
 }
 
-bool FileInfo::Open(wchar_t* p_file_path)
+bool FileInfo::Open(const wchar_t* p_file_path)
 {
     bool b_ret = false;
     wchar_t* p_parsed_path = new wchar_t[MAX_VALUE];

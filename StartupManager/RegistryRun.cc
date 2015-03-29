@@ -39,13 +39,13 @@ exit:
     return b_ret;
 }
 
-bool RegistryRun::Open(const wchar_t* lp_subkey, REGSAM sam_desired)
+bool RegistryRun::Open(const wchar_t* p_subkey, REGSAM sam_desired)
 {
     HKEY h_key = NULL;
     bool b_ret = false;
     long l_ret = ::RegOpenKeyEx(
         m_h_key,
-        lp_subkey,
+        p_subkey,
         0,
         sam_desired | KEY_WOW64_64KEY,
         &h_key);
@@ -54,15 +54,15 @@ bool RegistryRun::Open(const wchar_t* lp_subkey, REGSAM sam_desired)
         goto exit;
     }
     m_h_key = h_key;
-    wcscpy_s(m_sz_subkey, MAX_KEY_LENGTH, lp_subkey);
+    wcscpy_s(m_sz_subkey, MAX_KEY_LENGTH, p_subkey);
     b_ret = true;
 exit:
     return b_ret;
 }
 
-bool RegistryRun::DeleteValue(const wchar_t* lp_valuename)
+bool RegistryRun::DeleteValue(const wchar_t* p_value_name)
 {
-    long l_ret = ::RegDeleteValue(m_h_key, lp_valuename);
+    long l_ret = ::RegDeleteValue(m_h_key, p_value_name);
     bool b_ret = false;
     if (l_ret != ERROR_SUCCESS)
     {
@@ -73,9 +73,9 @@ exit:
     return b_ret;
 }
 
-bool RegistryRun::DeleteKey(const wchar_t* lp_subkey)
+bool RegistryRun::DeleteKey(const wchar_t* p_subkey)
 {
-    long l_ret = ::RegDeleteKeyEx(m_h_key, lp_subkey, KEY_WOW64_64KEY, 0);
+    long l_ret = ::RegDeleteKeyEx(m_h_key, p_subkey, KEY_WOW64_64KEY, 0);
     bool b_ret = false;
     if (l_ret != ERROR_SUCCESS)
     {
@@ -86,14 +86,14 @@ exit:
     return b_ret;
 }
 
-bool RegistryRun::Read(const wchar_t* lp_valuename, byte* lp_data)
+bool RegistryRun::Read(const wchar_t* p_value_name, byte* p_data)
 {
     DWORD dw_size = 0;
     DWORD dw_type = 0;
     bool b_ret = false;
     long l_ret = ::RegQueryValueEx(
         m_h_key,
-        lp_valuename,
+        p_value_name,
         NULL,
         &dw_type,
         NULL,
@@ -106,10 +106,10 @@ bool RegistryRun::Read(const wchar_t* lp_valuename, byte* lp_data)
 
     l_ret = ::RegQueryValueEx(
         m_h_key,
-        lp_valuename,
+        p_value_name,
         NULL,
         &dw_type,
-        (byte*)lp_data,
+        (byte*)p_data,
         &dw_size);
 
     if (l_ret != ERROR_SUCCESS)
@@ -122,15 +122,15 @@ exit:
     return b_ret;
 }
 
-bool RegistryRun::Write(const wchar_t* lp_valuename, const wchar_t* lp_data)
+bool RegistryRun::Write(const wchar_t* p_value_name, const wchar_t* p_data)
 {
     long l_ret = ::RegSetValueEx(
         m_h_key,
-        lp_valuename,
+        p_value_name,
         0,
         REG_SZ,
-        (byte*)lp_data,
-        (DWORD)(wcslen(lp_data)*sizeof(wchar_t)));
+        (byte*)p_data,
+        (DWORD)(wcslen(p_data)*sizeof(wchar_t)));
 
     bool b_ret = false;
 
