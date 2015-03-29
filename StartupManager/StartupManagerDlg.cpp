@@ -83,12 +83,12 @@ void CStartupManagerDlg::DisplayIconView()
 
     SHFILEINFO sfi = {0};
     HIMAGELIST h_image_list = 
-        (HIMAGELIST)::SHGetFileInfo(TEXT(""), 0, &sfi, sizeof(SHFILEINFO), SHGFI_SYSICONINDEX | SHGFI_LARGEICON);
+        (HIMAGELIST)::SHGetFileInfo(L"", 0, &sfi, sizeof(SHFILEINFO), SHGFI_SYSICONINDEX | SHGFI_LARGEICON);
     m_startup_list.SetImageList(CImageList::FromHandle(h_image_list), LVSIL_NORMAL);
     FileInfo fi;
     for (ULONG i = 0; i < vi_vec.size(); ++i)
     {
-        if (_tcscmp(vi_vec[i].sz_product_name, TEXT("unknown")) == 0)
+        if (wcscmp(vi_vec[i].sz_product_name, L"unknown") == 0)
             m_startup_list.InsertItem(i, vi_vec[i].sz_value_name, fi.GetIconIndex(vi_vec[i].sz_value));
         else
             m_startup_list.InsertItem(i, vi_vec[i].sz_product_name, fi.GetIconIndex(vi_vec[i].sz_value));
@@ -111,32 +111,32 @@ void CStartupManagerDlg::DisplayReportView()
     dw_style |= LVS_EX_CHECKBOXES;
     m_startup_list.SetExtendedStyle(dw_style);
 
-    m_startup_list.InsertColumn(0, TEXT("启动项"), LVCFMT_LEFT, rect.Width()/7, 0);
-    m_startup_list.InsertColumn(1, TEXT("路径"), LVCFMT_LEFT, 2*rect.Width()/7, 0);
-    m_startup_list.InsertColumn(2, TEXT("键"), LVCFMT_LEFT, rect.Width()/7, 0);
-    m_startup_list.InsertColumn(3, TEXT("位置"), LVCFMT_LEFT, 2*rect.Width()/7, 0);
-    m_startup_list.InsertColumn(4, TEXT("禁用情况"), LVCFMT_LEFT, rect.Width()/7, 0);
+    m_startup_list.InsertColumn(0, L"启动项", LVCFMT_LEFT, rect.Width()/7, 0);
+    m_startup_list.InsertColumn(1, L"路径", LVCFMT_LEFT, 2*rect.Width()/7, 0);
+    m_startup_list.InsertColumn(2, L"键", LVCFMT_LEFT, rect.Width()/7, 0);
+    m_startup_list.InsertColumn(3, L"位置", LVCFMT_LEFT, 2*rect.Width()/7, 0);
+    m_startup_list.InsertColumn(4, L"禁用情况", LVCFMT_LEFT, rect.Width()/7, 0);
 
     for (ULONG i = 0; i < vi_vec.size(); ++i)
     {
-        if (_tcscmp(vi_vec[i].sz_product_name, TEXT("unknown")) == 0)
+        if (wcscmp(vi_vec[i].sz_product_name, L"unknown") == 0)
             m_startup_list.InsertItem(i, vi_vec[i].sz_value_name);
         else
             m_startup_list.InsertItem(i, vi_vec[i].sz_product_name);
         m_startup_list.SetItemText(i, 1, vi_vec[i].sz_value);
 
         if (vi_vec[i].h_key == HKEY_CLASSES_ROOT)
-            m_startup_list.SetItemText(i, 2, TEXT("HKEY_CLASSES_ROOT"));
+            m_startup_list.SetItemText(i, 2, L"HKEY_CLASSES_ROOT");
         else if (vi_vec[i].h_key == HKEY_CURRENT_USER)
-            m_startup_list.SetItemText(i, 2, TEXT("HKEY_CURRENT_USER"));
+            m_startup_list.SetItemText(i, 2, L"HKEY_CURRENT_USER");
         else if (vi_vec[i].h_key == HKEY_LOCAL_MACHINE)
-            m_startup_list.SetItemText(i, 2, TEXT("HKEY_LOCAL_MACHINE"));
+            m_startup_list.SetItemText(i, 2, L"HKEY_LOCAL_MACHINE");
         else if (vi_vec[i].h_key == HKEY_USERS)
-            m_startup_list.SetItemText(i, 2, TEXT("HKEY_USERS"));
+            m_startup_list.SetItemText(i, 2, L"HKEY_USERS");
         else if (vi_vec[i].h_key == HKEY_CURRENT_CONFIG)
-            m_startup_list.SetItemText(i, 2, TEXT("HKEY_CURRENT_CONFIG"));
+            m_startup_list.SetItemText(i, 2, L"HKEY_CURRENT_CONFIG");
         else
-            m_startup_list.SetItemText(i, 2, TEXT(""));
+            m_startup_list.SetItemText(i, 2, L"");
 
         m_startup_list.SetItemText(i, 3, vi_vec[i].sz_subkey);
 
@@ -146,7 +146,7 @@ void CStartupManagerDlg::DisplayReportView()
         }
         else
         {
-            m_startup_list.SetItemText(i, 4, TEXT("已禁用"));
+            m_startup_list.SetItemText(i, 4, L"已禁用");
         }
     }
 }
@@ -184,9 +184,9 @@ BOOL CStartupManagerDlg::OnInitDialog()
 
     ::setlocale(LC_CTYPE, "");
 
-    ListItems::GetInstance()->AddItems(HKEY_CURRENT_USER, TEXT("Software\\Microsoft\\Windows\\CurrentVersion\\Run"), vi_vec);
-    ListItems::GetInstance()->AddItems(HKEY_LOCAL_MACHINE, TEXT("Software\\Microsoft\\Windows\\CurrentVersion\\Run"), vi_vec);
-    ListItems::GetInstance()->AddItems(HKEY_LOCAL_MACHINE, TEXT("Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Run"), vi_vec);
+    ListItems::GetInstance()->AddItems(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Run", vi_vec);
+    ListItems::GetInstance()->AddItems(HKEY_LOCAL_MACHINE, L"Software\\Microsoft\\Windows\\CurrentVersion\\Run", vi_vec);
+    ListItems::GetInstance()->AddItems(HKEY_LOCAL_MACHINE, L"Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Run", vi_vec);
     ListItems::GetInstance()->AddItems(vi_vec);
     ListItems::GetInstance()->ReadDisabledItemsFromFile(vi_vec);
 
@@ -252,11 +252,12 @@ void CStartupManagerDlg::OnBnClickedApplyButton()
     {
         if (!ListView_GetCheckState(m_startup_list, i))
         {
-            m_startup_list.SetItemText(i, 4, TEXT("已禁用"));
+            m_startup_list.SetItemText(i, 4, L"已禁用");
             ListItems::GetInstance()->DeleteItem(vi_vec[i]);
         }
         else
         {
+            m_startup_list.SetItemText(i, 4, L"");
             if (vi_vec[i].state == 0)
             {
                 ListItems::GetInstance()->ResetItem(vi_vec[i]);

@@ -21,45 +21,45 @@ void FileInfo::Close()
     }
 }
 
-TCHAR* FileInfo::ParsePath(TCHAR* p_file_path)
+wchar_t* FileInfo::ParsePath(wchar_t* p_file_path)
 {
-    TCHAR* p_parsed_path = new TCHAR[MAX_VALUE];
+    wchar_t* p_parsed_path = new wchar_t[MAX_VALUE];
     if (p_parsed_path == NULL)
-        return TEXT("error");
+        return L"error";
     memset(p_parsed_path, 0, MAX_VALUE);
-    if (p_file_path[0] == TEXT('\"'))
+    if (p_file_path[0] == L'\"')
         ++p_file_path;
-    memcpy(p_parsed_path, p_file_path, _tcslen(p_file_path)*sizeof(TCHAR));
-    for (ULONG i = 0; i < _tcslen(p_parsed_path); ++i)
+    memcpy(p_parsed_path, p_file_path, wcslen(p_file_path)*sizeof(wchar_t));
+    for (ULONG i = 0; i < wcslen(p_parsed_path); ++i)
     {
-        if (p_parsed_path[i-3] == TEXT('.') &&
-            (p_parsed_path[i-2] == TEXT('e') || p_parsed_path[i-2] == TEXT('E')) &&
-            (p_parsed_path[i-1] == TEXT('x') || p_parsed_path[i-1] == TEXT('X')) &&
-            (p_parsed_path[i] == TEXT('e') || p_parsed_path[i] == TEXT('E')))
+        if (p_parsed_path[i-3] == L'.' &&
+            (p_parsed_path[i-2] == L'e' || p_parsed_path[i-2] == L'E') &&
+            (p_parsed_path[i-1] == L'x' || p_parsed_path[i-1] == L'X') &&
+            (p_parsed_path[i] == L'e' || p_parsed_path[i] == L'E'))
         {
-            _tcsncpy_s(p_parsed_path, _tcslen(p_parsed_path)*sizeof(TCHAR), p_file_path, i+1);
+            wcsncpy_s(p_parsed_path, wcslen(p_parsed_path)*sizeof(wchar_t), p_file_path, i+1);
             break;
         }
     }
     return p_parsed_path;
 }
 
-int FileInfo::GetIconIndex(TCHAR* p_file_path)
+int FileInfo::GetIconIndex(wchar_t* p_file_path)
 {
     SHFILEINFO s_info = {0};
     int i_ret = -1;
-    TCHAR* p_parsed_path = new TCHAR[MAX_VALUE];
+    wchar_t* p_parsed_path = new wchar_t[MAX_VALUE];
     if (p_file_path == NULL || p_parsed_path == NULL)
         goto exit;
     memset(p_parsed_path, 0, MAX_VALUE);
     if (!::PathFileExists(p_file_path))
     {
         p_parsed_path = ParsePath(p_file_path);
-        if (_tcscmp(p_parsed_path, TEXT("error")) == 0)
+        if (wcscmp(p_parsed_path, L"error") == 0)
             goto exit;
     }
     else
-        memcpy(p_parsed_path, p_file_path, _tcslen(p_file_path)*sizeof(TCHAR));
+        memcpy(p_parsed_path, p_file_path, wcslen(p_file_path)*sizeof(wchar_t));
     ::SHGetFileInfo(p_parsed_path, FILE_ATTRIBUTE_NORMAL, &s_info, sizeof(s_info),
         SHGFI_USEFILEATTRIBUTES | SHGFI_LARGEICON | SHGFI_SYSICONINDEX);
     i_ret = s_info.iIcon;
@@ -72,21 +72,21 @@ exit:
     return i_ret;
 }
 
-bool FileInfo::Open(TCHAR* p_file_path)
+bool FileInfo::Open(wchar_t* p_file_path)
 {
     bool b_ret = false;
-    TCHAR* p_parsed_path = new TCHAR[MAX_VALUE];
+    wchar_t* p_parsed_path = new wchar_t[MAX_VALUE];
     if (p_file_path == NULL || p_parsed_path == NULL)
         goto exit;
     memset(p_parsed_path, 0, MAX_VALUE);
     if (!::PathFileExists(p_file_path))
     {
         p_parsed_path = ParsePath(p_file_path);
-        if (_tcscmp(p_parsed_path, TEXT("error")) == 0)   // new error.
+        if (wcscmp(p_parsed_path, L"error") == 0)   // new error.
             goto exit;
     }
     else
-        memcpy(p_parsed_path, p_file_path, _tcslen(p_file_path)*sizeof(TCHAR));
+        memcpy(p_parsed_path, p_file_path, wcslen(p_file_path)*sizeof(wchar_t));
 
     DWORD dw_size = ::GetFileVersionInfoSize(p_parsed_path, NULL);
     if (dw_size == 0)
@@ -113,7 +113,7 @@ exit:
     return b_ret;
 }
 
-TCHAR* FileInfo::QueryValue(const TCHAR* p_value_name)
+wchar_t* FileInfo::QueryValue(const wchar_t* p_value_name)
 {
     struct LANGANDCODEPAGE {
         WORD w_language;
@@ -127,8 +127,8 @@ TCHAR* FileInfo::QueryValue(const TCHAR* p_value_name)
         goto exit;
     HRESULT hr = 0;
     UINT cb_translate = 0;
-    TCHAR sz_sub_block[MAX_PATH] = {0};
-    long l_ret = ::VerQueryValue(m_p_version_data, TEXT("\\VarFileInfo\\Translation"),
+    wchar_t sz_sub_block[MAX_PATH] = {0};
+    long l_ret = ::VerQueryValue(m_p_version_data, L"\\VarFileInfo\\Translation",
         (void**)&p_translate, &cb_translate);
     if (l_ret == 0)
         goto exit;
@@ -136,7 +136,7 @@ TCHAR* FileInfo::QueryValue(const TCHAR* p_value_name)
     for (ULONG i = 0; i < (cb_translate/sizeof(struct LANGANDCODEPAGE)); ++i)
     {
         hr = StringCchPrintf(sz_sub_block, MAX_PATH,
-            TEXT("\\StringFileInfo\\%04x%04x\\%s"),
+            L"\\StringFileInfo\\%04x%04x\\%s",
             p_translate[i].w_language,
             p_translate[i].w_codePage,
             p_value_name);
@@ -154,36 +154,36 @@ TCHAR* FileInfo::QueryValue(const TCHAR* p_value_name)
     b_err = false;
 exit:
     if (b_err || p_data == NULL)
-        return TEXT("unknown");
-    return (TCHAR*)p_data;
+        return L"unknown";
+    return (wchar_t*)p_data;
 }
 
-TCHAR* FileInfo::GetFileDescription()
+wchar_t* FileInfo::GetFileDescription()
 {
-    return QueryValue(TEXT("FileDescription"));
+    return QueryValue(L"FileDescription");
 }
 
-TCHAR* FileInfo::GetInternelName()
+wchar_t* FileInfo::GetInternelName()
 {
-    return QueryValue(TEXT("InternelName"));
+    return QueryValue(L"InternelName");
 }
 
-TCHAR* FileInfo::GetLegalTradeMarks()
+wchar_t* FileInfo::GetLegalTradeMarks()
 {
-    return QueryValue(TEXT("LegalTradeMarks"));
+    return QueryValue(L"LegalTradeMarks");
 }
 
-TCHAR* FileInfo::GetOriginalFileName()
+wchar_t* FileInfo::GetOriginalFileName()
 {
-    return QueryValue(TEXT("OriginalFileName"));
+    return QueryValue (L"OriginalFileName");
 }
 
-TCHAR* FileInfo::GetProductName()
+wchar_t* FileInfo::GetProductName()
 {
-    return QueryValue(TEXT("ProductName"));
+    return QueryValue(L"ProductName");
 }
 
-TCHAR* FileInfo::GetProductVersion()
+wchar_t* FileInfo::GetProductVersion()
 {
-    return QueryValue(TEXT("ProductVersion"));
+    return QueryValue(L"ProductVersion");
 }

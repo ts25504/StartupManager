@@ -13,7 +13,7 @@ RegistryRun::~RegistryRun()
     Close();
 }
 
-bool RegistryRun::CreateKey(const TCHAR* lp_subkey, REGSAM sam_desired)
+bool RegistryRun::CreateKey(const wchar_t* lp_subkey, REGSAM sam_desired)
 {
     HKEY h_key = NULL;
     DWORD dw_disposition = 0;
@@ -39,7 +39,7 @@ exit:
     return b_ret;
 }
 
-bool RegistryRun::Open(const TCHAR* lp_subkey, REGSAM sam_desired)
+bool RegistryRun::Open(const wchar_t* lp_subkey, REGSAM sam_desired)
 {
     HKEY h_key = NULL;
     bool b_ret = false;
@@ -54,13 +54,13 @@ bool RegistryRun::Open(const TCHAR* lp_subkey, REGSAM sam_desired)
         goto exit;
     }
     m_h_key = h_key;
-    _tcscpy_s(m_sz_subkey, MAX_KEY_LENGTH, lp_subkey);
+    wcscpy_s(m_sz_subkey, MAX_KEY_LENGTH, lp_subkey);
     b_ret = true;
 exit:
     return b_ret;
 }
 
-bool RegistryRun::DeleteValue(const TCHAR* lp_valuename)
+bool RegistryRun::DeleteValue(const wchar_t* lp_valuename)
 {
     long l_ret = ::RegDeleteValue(m_h_key, lp_valuename);
     bool b_ret = false;
@@ -73,7 +73,7 @@ exit:
     return b_ret;
 }
 
-bool RegistryRun::DeleteKey(const TCHAR* lp_subkey)
+bool RegistryRun::DeleteKey(const wchar_t* lp_subkey)
 {
     long l_ret = ::RegDeleteKeyEx(m_h_key, lp_subkey, KEY_WOW64_64KEY, 0);
     bool b_ret = false;
@@ -86,7 +86,7 @@ exit:
     return b_ret;
 }
 
-bool RegistryRun::Read(const TCHAR* lp_valuename, byte* lp_data)
+bool RegistryRun::Read(const wchar_t* lp_valuename, byte* lp_data)
 {
     DWORD dw_size = 0;
     DWORD dw_type = 0;
@@ -122,7 +122,7 @@ exit:
     return b_ret;
 }
 
-bool RegistryRun::Write(const TCHAR* lp_valuename, const TCHAR* lp_data)
+bool RegistryRun::Write(const wchar_t* lp_valuename, const wchar_t* lp_data)
 {
     long l_ret = ::RegSetValueEx(
         m_h_key,
@@ -130,7 +130,7 @@ bool RegistryRun::Write(const TCHAR* lp_valuename, const TCHAR* lp_data)
         0,
         REG_SZ,
         (byte*)lp_data,
-        (DWORD)(_tcslen(lp_data)*sizeof(TCHAR)));
+        (DWORD)(wcslen(lp_data)*sizeof(wchar_t)));
 
     bool b_ret = false;
 
@@ -160,9 +160,9 @@ void RegistryRun::Close()
 
 bool RegistryRun::Query(std::vector<ValueInfo>& vi_vec)
 { 
-    TCHAR sz_ach_key[MAX_KEY_LENGTH] = {0};   // buffer for subkey name
+    wchar_t sz_ach_key[MAX_KEY_LENGTH] = {0};   // buffer for subkey name
     DWORD dw_cb_name = 0;                     // size of name string
-    TCHAR sz_ach_class[MAX_PATH] = TEXT("");  // buffer for class name
+    wchar_t sz_ach_class[MAX_PATH] = L"";  // buffer for class name
     DWORD dw_cch_classname = MAX_PATH;        // size of class string
     DWORD dw_c_subkeys = 0;                   // number of subkeys
     DWORD dw_cb_max_subKey = 0;               // longest subkey size
@@ -179,10 +179,10 @@ bool RegistryRun::Query(std::vector<ValueInfo>& vi_vec)
     long l_ret = 0;
     bool b_ret = false;
 
-    TCHAR sz_ach_value[MAX_VALUE_NAME]  = {0};
+    wchar_t sz_ach_value[MAX_VALUE_NAME]  = {0};
     DWORD dw_cch_value = MAX_VALUE_NAME;
 
-    TCHAR sz_ach_data[MAX_VALUE] = {0};
+    wchar_t sz_ach_data[MAX_VALUE] = {0};
     DWORD dw_cch_data = MAX_VALUE;
 
     // Get the class name and the value count.
@@ -216,7 +216,7 @@ bool RegistryRun::Query(std::vector<ValueInfo>& vi_vec)
             vi.sz_value[0] = '\0';
             vi.h_key = m_h_origin_key;
             vi.state = 1;
-            _tcscpy_s(vi.sz_subkey, MAX_KEY_LENGTH, m_sz_subkey);
+            wcscpy_s(vi.sz_subkey, MAX_KEY_LENGTH, m_sz_subkey);
             l_ret = ::RegEnumValue(
                 m_h_key,
                 i,
@@ -228,7 +228,7 @@ bool RegistryRun::Query(std::vector<ValueInfo>& vi_vec)
                 &dw_cch_data);
 
             fi.Open(vi.sz_value);
-            _tcscpy_s(vi.sz_product_name, MAX_PATH, fi.GetProductName());
+            wcscpy_s(vi.sz_product_name, MAX_PATH, fi.GetProductName());
             fi.Close();
             if (l_ret == ERROR_SUCCESS )
             {
