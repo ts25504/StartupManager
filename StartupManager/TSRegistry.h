@@ -3,7 +3,7 @@
 
 #include <vector>
 
-#include "Utils.h"
+#include "TSUtils.h"
 #include "Constants.h"
 
 class TSRegistry
@@ -19,12 +19,13 @@ public:
     bool Read(const wchar_t* p_value_name, byte* p_data);
     bool Write(const wchar_t* p_value_name, const wchar_t* p_data);
     bool Query(std::vector<ValueInfo>& vi_vec);
+    void EnumValue(std::vector<ValueInfo>& vi_vec, DWORD dw_c_values);
     void Close();
 
 private:
     HKEY m_h_key;
     HKEY m_h_origin_key;
-    wchar_t m_sz_subkey[MAX_KEY_LENGTH];
+    wchar_t m_sz_subkey[c_dw_max_key_length];
 };
 
 #endif

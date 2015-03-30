@@ -7,7 +7,7 @@
 #include "StartupManagerDlg.h"
 #include "TSRegistry.h"
 #include "TSFileVersionInfo.h"
-#include "Utils.h"
+#include "TSUtils.h"
 
 #ifdef _DEBUG
 #define new DEBUG_NEW
@@ -88,11 +88,11 @@ void CStartupManagerDlg::DisplayIconView()
     TSFileVersionInfo fi;
     for (ULONG i = 0; i < vi_vec.size(); ++i)
     {
-        if (wcscmp(vi_vec[i].sz_product_name, L"unknown") == 0)
-            m_startup_list.InsertItem(i, vi_vec[i].sz_value_name, fi.GetIconIndex(vi_vec[i].sz_value));
+        if (vi_vec[i].sz_product_name == L"unknown")
+            m_startup_list.InsertItem(i, vi_vec[i].sz_value_name.c_str(), fi.GetIconIndex(vi_vec[i].sz_value.c_str()));
         else
-            m_startup_list.InsertItem(i, vi_vec[i].sz_product_name, fi.GetIconIndex(vi_vec[i].sz_value));
-        m_startup_list.SetItemText(i, 1, vi_vec[i].sz_value);
+            m_startup_list.InsertItem(i, vi_vec[i].sz_product_name.c_str(), fi.GetIconIndex(vi_vec[i].sz_value.c_str()));
+        m_startup_list.SetItemText(i, 1, vi_vec[i].sz_value.c_str());
 
         if (vi_vec[i].state)
         {
@@ -119,11 +119,11 @@ void CStartupManagerDlg::DisplayReportView()
 
     for (ULONG i = 0; i < vi_vec.size(); ++i)
     {
-        if (wcscmp(vi_vec[i].sz_product_name, L"unknown") == 0)
-            m_startup_list.InsertItem(i, vi_vec[i].sz_value_name);
+        if (vi_vec[i].sz_product_name == L"unknown")
+            m_startup_list.InsertItem(i, vi_vec[i].sz_value_name.c_str());
         else
-            m_startup_list.InsertItem(i, vi_vec[i].sz_product_name);
-        m_startup_list.SetItemText(i, 1, vi_vec[i].sz_value);
+            m_startup_list.InsertItem(i, vi_vec[i].sz_product_name.c_str());
+        m_startup_list.SetItemText(i, 1, vi_vec[i].sz_value.c_str());
 
         if (vi_vec[i].h_key == HKEY_CLASSES_ROOT)
             m_startup_list.SetItemText(i, 2, L"HKEY_CLASSES_ROOT");
@@ -138,7 +138,7 @@ void CStartupManagerDlg::DisplayReportView()
         else
             m_startup_list.SetItemText(i, 2, L"");
 
-        m_startup_list.SetItemText(i, 3, vi_vec[i].sz_subkey);
+        m_startup_list.SetItemText(i, 3, vi_vec[i].sz_subkey.c_str());
 
         if (vi_vec[i].state)
         {
@@ -184,11 +184,11 @@ BOOL CStartupManagerDlg::OnInitDialog()
 
     ::setlocale(LC_CTYPE, "");
 
-    Utils::GetInstance()->AddItems(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Run", vi_vec);
-    Utils::GetInstance()->AddItems(HKEY_LOCAL_MACHINE, L"Software\\Microsoft\\Windows\\CurrentVersion\\Run", vi_vec);
-    Utils::GetInstance()->AddItems(HKEY_LOCAL_MACHINE, L"Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Run", vi_vec);
-    Utils::GetInstance()->AddItems(vi_vec);
-    Utils::GetInstance()->ReadDisabledItemsFromFile(vi_vec);
+    TSUtils::GetInstance()->AddItems(HKEY_CURRENT_USER, L"Software\\Microsoft\\Windows\\CurrentVersion\\Run", vi_vec);
+    TSUtils::GetInstance()->AddItems(HKEY_LOCAL_MACHINE, L"Software\\Microsoft\\Windows\\CurrentVersion\\Run", vi_vec);
+    TSUtils::GetInstance()->AddItems(HKEY_LOCAL_MACHINE, L"Software\\Wow6432Node\\Microsoft\\Windows\\CurrentVersion\\Run", vi_vec);
+    TSUtils::GetInstance()->AddItems(vi_vec);
+    TSUtils::GetInstance()->ReadDisabledItemsFromFile(vi_vec);
 
     //DisplayIconView();
     DisplayReportView();
@@ -253,14 +253,14 @@ void CStartupManagerDlg::OnBnClickedApplyButton()
         if (!ListView_GetCheckState(m_startup_list, i))
         {
             m_startup_list.SetItemText(i, 4, L"ÒÑ½ûÓÃ");
-            Utils::GetInstance()->DeleteItem(vi_vec[i]);
+            TSUtils::GetInstance()->DeleteItem(vi_vec[i]);
         }
         else
         {
             m_startup_list.SetItemText(i, 4, L"");
             if (vi_vec[i].state == 0)
             {
-                Utils::GetInstance()->ResetItem(vi_vec[i]);
+                TSUtils::GetInstance()->ResetItem(vi_vec[i]);
             }
         }
     }
@@ -268,6 +268,6 @@ void CStartupManagerDlg::OnBnClickedApplyButton()
 
 void CStartupManagerDlg::OnCancel()
 {
-    Utils::GetInstance()->WriteDisabledItemsToFile(vi_vec);
+    TSUtils::GetInstance()->WriteDisabledItemsToFile(vi_vec);
     CDialog::OnCancel();
 }

@@ -230,7 +230,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\Utils.cc"
+				RelativePath=".\TSUtils.cc"
 				>
 			</File>
 		</Filter>
@@ -268,7 +268,7 @@
 				>
 			</File>
 			<File
-				RelativePath=".\Utils.h"
+				RelativePath=".\TSUtils.h"
 				>
 			</File>
 		</Filter>

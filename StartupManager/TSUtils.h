@@ -1,23 +1,25 @@
-#ifndef _Utils_H_
-#define _Utils_H_
+#ifndef _TSUtils_H_
+#define _TSUtils_H_
 
 #include <vector>
+#include <string>
 
 #include "Constants.h"
 
 struct ValueInfo {
-    wchar_t sz_value_name[MAX_VALUE_NAME];
-    wchar_t sz_value[MAX_VALUE];
-    wchar_t sz_product_name[MAX_PATH];
-    wchar_t sz_subkey[MAX_KEY_LENGTH];
+    ValueInfo() : h_key(NULL), state(0) { }
+    std::wstring sz_value_name;
+    std::wstring sz_value;
+    std::wstring sz_product_name;
+    std::wstring sz_subkey;
     HKEY h_key;
     int state;
 };
 
-class Utils
+class TSUtils
 {
 public:
-    static Utils* GetInstance();
+    static TSUtils* GetInstance();
     void ReadDisabledItemsFromFile(std::vector<ValueInfo>& vi_vec);
     void WriteDisabledItemsToFile(std::vector<ValueInfo>& vi_vec);
     void AddItems(HKEY h_key, const wchar_t* sz_subkey, std::vector<ValueInfo>& vi_vec);

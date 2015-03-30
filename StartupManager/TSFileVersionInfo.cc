@@ -72,7 +72,7 @@ wchar_t* TSFileVersionInfo::QueryValue(const wchar_t* p_value_name)
         goto exit;
     HRESULT hr = 0;
     UINT cb_translate = 0;
-    wchar_t sz_sub_block[MAX_PATH] = {0};
+    wchar_t sz_sub_block[c_dw_max_path] = {0};
     long l_ret = ::VerQueryValue(m_p_version_data, L"\\VarFileInfo\\Translation",
         (void**)&p_translate, &cb_translate);
     if (l_ret == 0)
@@ -80,7 +80,7 @@ wchar_t* TSFileVersionInfo::QueryValue(const wchar_t* p_value_name)
 
     for (ULONG i = 0; i < (cb_translate/sizeof(struct LANGANDCODEPAGE)); ++i)
     {
-        hr = StringCchPrintf(sz_sub_block, MAX_PATH,
+        hr = StringCchPrintf(sz_sub_block, c_dw_max_path,
             L"\\StringFileInfo\\%04x%04x\\%s",
             p_translate[i].w_language,
             p_translate[i].w_codePage,
