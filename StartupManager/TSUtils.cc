@@ -83,6 +83,8 @@ void TSUtils::WriteDisabledItemsToFile(std::vector<ValueInfo>& vi_vec)
                 sz_key = L"HKEY_USERS";
             else if (vi_vec[i].h_key == HKEY_CURRENT_CONFIG)
                 sz_key = L"HKEY_CURRENT_CONFIG";
+            else
+                sz_key = L"";
 
             fout << vi_vec[i].sz_value_name << std::endl
                 << vi_vec[i].sz_value << std::endl

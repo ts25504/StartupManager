@@ -162,17 +162,17 @@ void TSRegistry::Close()
 bool TSRegistry::Query(std::vector<ValueInfo>& vi_vec)
 { 
     wchar_t sz_ach_key[c_dw_max_key_length] = {0}; // buffer for subkey name
-    DWORD dw_cb_name = 0;                     // size of name string
+    DWORD dw_cb_name = 0;                          // size of name string
     wchar_t sz_ach_class[c_dw_max_path] = L"";     // buffer for class name
     DWORD dw_cch_classname = c_dw_max_path;        // size of class string
-    DWORD dw_c_subkeys = 0;                   // number of subkeys
-    DWORD dw_cb_max_subKey = 0;               // longest subkey size
-    DWORD dw_cch_max_class = 0;               // longest class string
-    DWORD dw_c_values = 0;                    // number of values for key
-    DWORD dw_cch_max_value = 0;               // longest value name
-    DWORD dw_cb_max_valuedata = 0;            // longest value data
-    DWORD dw_cb_security_descriptor = 0;      // size of security descriptor
-    FILETIME ft_lastwritetime = {0};          // last write time
+    DWORD dw_c_subkeys = 0;                        // number of subkeys
+    DWORD dw_cb_max_subkey = 0;                    // longest subkey size
+    DWORD dw_cch_max_class = 0;                    // longest class string
+    DWORD dw_c_values = 0;                         // number of values for key
+    DWORD dw_cch_max_value_name = 0;               // longest value name
+    DWORD dw_cb_max_value = 0;                     // longest value data
+    DWORD dw_cb_security_descriptor = 0;           // size of security descriptor
+    FILETIME ft_lastwritetime = {0};               // last write time
 
     bool b_ret = false;
     long l_ret = 0;
@@ -184,11 +184,11 @@ bool TSRegistry::Query(std::vector<ValueInfo>& vi_vec)
         &dw_cch_classname,          // size of class string
         NULL,                       // reserved
         &dw_c_subkeys,              // number of subkeys
-        &dw_cb_max_subKey,          // longest subkey size
+        &dw_cb_max_subkey,          // longest subkey size
         &dw_cch_max_class,          // longest class string
         &dw_c_values,               // number of values for this key
-        &dw_cch_max_value,          // longest value name
-        &dw_cb_max_valuedata,       // longest value data
+        &dw_cch_max_value_name,          // longest value name
+        &dw_cb_max_value,       // longest value data
         &dw_cb_security_descriptor, // security descriptor
         &ft_lastwritetime);         // last write time
 
@@ -199,43 +199,51 @@ bool TSRegistry::Query(std::vector<ValueInfo>& vi_vec)
 
     if (dw_c_values)
     {
-        EnumValue(vi_vec, dw_c_values);
+        EnumValue(vi_vec, dw_c_values, dw_cch_max_value_name*sizeof(wchar_t), dw_cb_max_value);
     }
     b_ret = true;
 exit:
     return b_ret;
 }
 
-void TSRegistry::EnumValue(std::vector<ValueInfo>& vi_vec, DWORD dw_c_values)
+void TSRegistry::EnumValue(std::vector<ValueInfo>& vi_vec, DWORD dw_c_values, DWORD dw_cch_max_value_name, DWORD dw_cb_max_value)
 {
     long l_ret = 0;
     TSFileVersionInfo fi;
-    wchar_t sz_value_name[c_dw_max_value_name]  = {0};
-    DWORD dw_value_name_size = c_dw_max_value_name;
+    wchar_t* p_value_name = new wchar_t[dw_cch_max_value_name];
+    if (p_value_name == NULL)
+        goto exit;
+    memset(p_value_name, 0, dw_cch_max_value_name);
 
-    wchar_t sz_value[c_dw_max_value] = {0};
-    DWORD dw_value_size = c_dw_max_value;
+    DWORD dw_cch_value_name = dw_cch_max_value_name;
+
+    wchar_t* p_value = new wchar_t[dw_cb_max_value/sizeof(wchar_t)];
+    if (p_value == NULL)
+        goto exit;
+    memset(p_value, 0, dw_cb_max_value/sizeof(wchar_t));
+
+    DWORD dw_cb_value = dw_cb_max_value;
 
     for (ULONG i = 0, l_ret = ERROR_SUCCESS; i < dw_c_values; i++)
     {
         ValueInfo vi;
-        dw_value_name_size = c_dw_max_value_name;
-        dw_value_size = c_dw_max_value;
+        dw_cch_value_name = dw_cch_max_value_name;
+        dw_cb_value = dw_cb_max_value;
         vi.h_key = m_h_origin_key;
         vi.state = 1;
         vi.sz_subkey = m_sz_subkey;
         l_ret = ::RegEnumValue(
             m_h_key,
             i,
-            sz_value_name,
-            &dw_value_name_size,
+            p_value_name,
+            &dw_cch_value_name,
             NULL,
             NULL,
-            (byte*)sz_value,
-            &dw_value_size);
+            (byte*)p_value,
+            &dw_cb_value);
 
-        vi.sz_value_name = sz_value_name;
-        vi.sz_value = sz_value;
+        vi.sz_value_name = p_value_name;
+        vi.sz_value = p_value;
         wchar_t* p_parsed_path = TSUtils::GetInstance()->ParsePath(vi.sz_value.c_str());
         fi.Open(p_parsed_path);
         vi.sz_product_name = fi.GetProductName();
@@ -244,5 +252,16 @@ void TSRegistry::EnumValue(std::vector<ValueInfo>& vi_vec, DWORD dw_c_values)
         {
             vi_vec.push_back(vi);
         }
+    }
+exit:
+    if (p_value_name)
+    {
+        delete[] p_value_name;
+        p_value_name = NULL;
+    }
+    if (p_value)
+    {
+        delete[] p_value;
+        p_value = NULL;
     }
 }
