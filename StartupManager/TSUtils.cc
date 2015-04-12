@@ -3,6 +3,7 @@
 #include <Shlwapi.h>
 #include <fstream>
 #include <iostream>
+#include <locale>
 
 #include "TSUtils.h"
 #include "TSRegistry.h"
@@ -17,6 +18,7 @@ TSUtils* TSUtils::GetInstance()
 void TSUtils::ReadDisabledItemsFromFile(std::vector<ValueInfo>& vi_vec)
 {
     std::wifstream fin("DisabledItems.ini", std::wifstream::in);
+    fin.imbue(std::locale("", std::locale::all ^ std::locale::numeric));
     std::wstring sz_key, sz_tmp;
     size_t num_of_disabled_items = 0;
     fin >> num_of_disabled_items;
@@ -61,6 +63,7 @@ void TSUtils::ReadDisabledItemsFromFile(std::vector<ValueInfo>& vi_vec)
 void TSUtils::WriteDisabledItemsToFile(std::vector<ValueInfo>& vi_vec)
 {
     std::wofstream fout("DisabledItems.ini", std::wofstream::out);
+    fout.imbue(std::locale("", std::locale::all ^ std::locale::numeric));
     size_t num_of_disabled_items = 0;
     std::wstring sz_key;
     for (ULONG i = 0; i < vi_vec.size(); ++i)
